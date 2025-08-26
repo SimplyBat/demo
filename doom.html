@@ -9,13 +9,12 @@
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+<canvas id="game" width="800" height="400"></canvas>
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
 
+// Map: 1 = wall, 0 = empty
 const map = [
   [1,1,1,1,1,1,1,1,1,1],
   [1,0,0,0,0,0,0,0,0,1],
@@ -37,37 +36,37 @@ document.addEventListener('keyup', e => keys[e.key] = false);
 
 // Raycasting
 function castRays() {
-  const fov = Math.PI/3;
-  const numRays = 300; // fewer rays
+  const fov = Math.PI / 3;
+  const numRays = 120;
   const sliceWidth = canvas.width / numRays;
 
-  for(let i=0;i<numRays;i++){
+  for(let i = 0; i < numRays; i++) {
     const rayAngle = player.angle - fov/2 + fov*(i/numRays);
     let distance = 0;
     let hit = false;
     let rayX = player.x;
     let rayY = player.y;
 
-    while(!hit && distance<20){
-      rayX += 0.05*Math.cos(rayAngle);
-      rayY += 0.05*Math.sin(rayAngle);
-      distance += 0.05;
+    while(!hit && distance < 20) {
+      rayX += 0.1 * Math.cos(rayAngle); // step size increased
+      rayY += 0.1 * Math.sin(rayAngle);
+      distance += 0.1;
       if(map[Math.floor(rayY)][Math.floor(rayX)] === 1) hit = true;
     }
 
-    // fish-eye correction
+    // Fish-eye correction
     distance *= Math.cos(rayAngle - player.angle);
 
-    const wallHeight = Math.min(canvas.height, 300/distance);
+    const wallHeight = Math.min(canvas.height, 200 / distance);
 
-    // Draw ceiling
-    ctx.fillStyle = '#444';
+    // Ceiling
+    ctx.fillStyle = '#555';
     ctx.fillRect(i*sliceWidth, 0, sliceWidth, canvas.height/2 - wallHeight/2);
-    // Draw floor
+    // Floor
     ctx.fillStyle = '#222';
     ctx.fillRect(i*sliceWidth, canvas.height/2 + wallHeight/2, sliceWidth, canvas.height/2 - wallHeight/2);
-    // Draw wall
-    let shade = Math.max(0, 255 - distance*30);
+    // Wall
+    const shade = Math.max(50, 255 - distance*20);
     ctx.fillStyle = `rgb(${shade},0,0)`;
     ctx.fillRect(i*sliceWidth, canvas.height/2 - wallHeight/2, sliceWidth, wallHeight);
   }
@@ -75,23 +74,22 @@ function castRays() {
 
 // Game loop
 function gameLoop() {
-  // Player movement
+  const moveSpeed = 0.05;
+  const rotSpeed = 0.03;
   if(keys['ArrowUp']){
-    let nx = player.x + 0.05 * Math.cos(player.angle);
-    let ny = player.y + 0.05 * Math.sin(player.angle);
+    const nx = player.x + moveSpeed * Math.cos(player.angle);
+    const ny = player.y + moveSpeed * Math.sin(player.angle);
     if(map[Math.floor(ny)][Math.floor(nx)] === 0){ player.x = nx; player.y = ny; }
   }
   if(keys['ArrowDown']){
-    let nx = player.x - 0.05 * Math.cos(player.angle);
-    let ny = player.y - 0.05 * Math.sin(player.angle);
+    const nx = player.x - moveSpeed * Math.cos(player.angle);
+    const ny = player.y - moveSpeed * Math.sin(player.angle);
     if(map[Math.floor(ny)][Math.floor(nx)] === 0){ player.x = nx; player.y = ny; }
   }
-  if(keys['ArrowLeft']) player.angle -= 0.03;
-  if(keys['ArrowRight']) player.angle += 0.03;
+  if(keys['ArrowLeft']) player.angle -= rotSpeed;
+  if(keys['ArrowRight']) player.angle += rotSpeed;
 
-  ctx.fillStyle = 'black';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   castRays();
   requestAnimationFrame(gameLoop);
 }
