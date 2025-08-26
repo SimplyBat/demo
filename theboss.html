@@ -12,9 +12,72 @@
       background: linear-gradient(#0a2e0a, #1b4d1b); /* forest gradient */
       color: white;
       font-family: Arial, sans-serif;
-      overflow: hidden;
       margin: 0;
     }
 
     #game {
       position: relative;
+      width: 700px;
+      height: 250px;
+      background: #2e4d2e;
+      border: 3px solid white;
+      overflow: hidden;
+    }
+
+    /* Ground with white flowers */
+    #ground {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 50px;
+      background: #356635;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+      white-space: nowrap;
+    }
+
+    #boss {
+      position: absolute;
+      bottom: 50px; /* on the ground */
+      left: 50px;
+      font-size: 50px;
+      transition: bottom 0.2s;
+    }
+
+    .obstacle {
+      position: absolute;
+      bottom: 50px;
+      right: -60px;
+      font-size: 40px;
+      animation: move 3s linear infinite;
+    }
+
+    @keyframes move {
+      from { right: -60px; }
+      to { right: 760px; }
+    }
+
+    #scoreboard {
+      position: absolute;
+      top: 5px;
+      left: 10px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div id="scoreboard">
+      Score: <span id="score">0</span> |
+      Best: <span id="best">0</span>
+    </div>
+    <div id="boss">🌸</div>
+    <div class="obstacle">🐍</div>
+    <div id="ground">🤍 🤍 🤍 🤍 🤍 🤍 🤍 🤍 🤍 🤍 🤍 🤍 🤍 🤍 🤍</div>
+  </div>
+
+  <script>
+    const boss = document.getElementById("boss");
+    con
