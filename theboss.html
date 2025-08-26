@@ -2,16 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>The Boss Running Game</title>
+  <title>Metal Gear Solid</title>
   <style>
     body {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background: linear-gradient(#0a2e0a, #1b4d1b); /* forest gradient */
-      color: white;
-      font-family: Arial, sans-serif;
+      background: linear-gradient(#0a1a0a, #123412); /* darker forest background */
       margin: 0;
     }
 
@@ -19,18 +17,18 @@
       position: relative;
       width: 700px;
       height: 250px;
-      background: #2e4d2e;
-      border: 3px solid white;
+      background: #cce5cc; /* light green so emojis pop out */
+      border: 3px solid black;
       overflow: hidden;
     }
 
-    /* Ground with white flowers */
+    /* Ground with flowers */
     #ground {
       position: absolute;
       bottom: 0;
       width: 100%;
       height: 50px;
-      background: #356635;
+      background: #88bb88;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -40,7 +38,7 @@
 
     #boss {
       position: absolute;
-      bottom: 50px; /* on the ground */
+      bottom: 50px; /* sits on ground */
       left: 50px;
       font-size: 50px;
       transition: bottom 0.2s;
@@ -49,14 +47,14 @@
     .obstacle {
       position: absolute;
       bottom: 50px;
-      right: -60px;
+      left: 700px; /* start off-screen to the right */
       font-size: 40px;
       animation: move 3s linear infinite;
     }
 
     @keyframes move {
-      from { right: -60px; }
-      to { right: 760px; }
+      from { left: 700px; }
+      to { left: -50px; }
     }
 
     #scoreboard {
@@ -64,6 +62,7 @@
       top: 5px;
       left: 10px;
       font-size: 18px;
+      font-family: Arial, sans-serif;
     }
   </style>
 </head>
@@ -80,4 +79,33 @@
 
   <script>
     const boss = document.getElementById("boss");
-    con
+    const obstacle = document.querySelector(".obstacle");
+    const scoreDisplay = document.getElementById("score");
+    const bestDisplay = document.getElementById("best");
+
+    let jumping = false;
+    let score = 0;
+    let best = localStorage.getItem("bestScore") || 0;
+    bestDisplay.textContent = best;
+
+    // Jump with space
+    document.body.addEventListener("keydown", e => {
+      if (e.code === "Space" && !jumping) {
+        jumping = true;
+        boss.style.bottom = "130px"; // jump up
+        setTimeout(() => {
+          boss.style.bottom = "50px"; // back down
+          jumping = false;
+        }, 500);
+      }
+    });
+
+    // Score counter
+    let scoreInterval = setInterval(() => {
+      score++;
+      scoreDisplay.textContent = score;
+    }, 1000);
+
+    // Collision detection
+    setInterval(() => {
+      let bossRect = boss.getBoundingClientRect();
