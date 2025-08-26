@@ -16,7 +16,6 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// Map: 1 = wall, 0 = empty
 const map = [
   [1,1,1,1,1,1,1,1,1,1],
   [1,0,0,0,0,0,0,0,0,1],
@@ -36,40 +35,41 @@ const keys = {};
 document.addEventListener('keydown', e => keys[e.key] = true);
 document.addEventListener('keyup', e => keys[e.key] = false);
 
-// Raycasting function
+// Raycasting
 function castRays() {
-  const fov = Math.PI / 3;
-  const numRays = canvas.width;
-  for(let i = 0; i < numRays; i++){
-    const rayAngle = player.angle - fov/2 + fov * (i/numRays);
+  const fov = Math.PI/3;
+  const numRays = 300; // fewer rays
+  const sliceWidth = canvas.width / numRays;
+
+  for(let i=0;i<numRays;i++){
+    const rayAngle = player.angle - fov/2 + fov*(i/numRays);
     let distance = 0;
     let hit = false;
     let rayX = player.x;
     let rayY = player.y;
 
-    while(!hit && distance < 20){
-      rayX += 0.02 * Math.cos(rayAngle);
-      rayY += 0.02 * Math.sin(rayAngle);
-      distance += 0.02;
+    while(!hit && distance<20){
+      rayX += 0.05*Math.cos(rayAngle);
+      rayY += 0.05*Math.sin(rayAngle);
+      distance += 0.05;
       if(map[Math.floor(rayY)][Math.floor(rayX)] === 1) hit = true;
     }
 
-    // Correct fish-eye
+    // fish-eye correction
     distance *= Math.cos(rayAngle - player.angle);
 
-    // Wall height
-    const wallHeight = Math.min(canvas.height, (canvas.height / distance) * 0.8);
+    const wallHeight = Math.min(canvas.height, 300/distance);
 
-    // Draw floor and ceiling
-    ctx.fillStyle = '#666'; // ceiling
-    ctx.fillRect(i, 0, 1, canvas.height/2 - wallHeight/2);
-    ctx.fillStyle = '#222'; // floor
-    ctx.fillRect(i, canvas.height/2 + wallHeight/2, 1, canvas.height/2 - wallHeight/2);
-
-    // Wall color shading
-    let shade = Math.min(255, 255/distance);
+    // Draw ceiling
+    ctx.fillStyle = '#444';
+    ctx.fillRect(i*sliceWidth, 0, sliceWidth, canvas.height/2 - wallHeight/2);
+    // Draw floor
+    ctx.fillStyle = '#222';
+    ctx.fillRect(i*sliceWidth, canvas.height/2 + wallHeight/2, sliceWidth, canvas.height/2 - wallHeight/2);
+    // Draw wall
+    let shade = Math.max(0, 255 - distance*30);
     ctx.fillStyle = `rgb(${shade},0,0)`;
-    ctx.fillRect(i, canvas.height/2 - wallHeight/2, 1, wallHeight);
+    ctx.fillRect(i*sliceWidth, canvas.height/2 - wallHeight/2, sliceWidth, wallHeight);
   }
 }
 
