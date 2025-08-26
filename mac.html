@@ -5,7 +5,7 @@
 <title>MacOS Desktop Mockup</title>
 <style>
   body {
-    margin: 0;
+    margin:0;
     height: 100vh;
     background: linear-gradient(to bottom, #4b6cb7, #182848);
     font-family: sans-serif;
@@ -69,40 +69,72 @@
     margin-right: 5px;
     cursor: pointer;
   }
+
+  .window .content {
+    padding: 10px;
+    font-size: 14px;
+  }
 </style>
 </head>
 <body>
 
 <!-- Dock -->
 <div class="dock">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" class="icon" alt="Apple" onclick="openWindow('window1')">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Folder_icon.svg" class="icon" alt="Folder" onclick="openWindow('window2')">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/3/3f/Gear_icon.svg" class="icon" alt="Settings" onclick="openWindow('window3')">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" class="icon" alt="Apple" onclick="openWindow('windowApple')">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/3/3f/Message_icon.svg" class="icon" alt="Messages" onclick="openWindow('windowMessages')">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Maps_icon.svg" class="icon" alt="Maps" onclick="openWindow('windowMaps')">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/5/52/Safari_browser_icon.svg" class="icon" alt="Safari" onclick="openWindow('windowSafari')">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/1/1d/Photos_icon.svg" class="icon" alt="Photos" onclick="openWindow('windowPhotos')">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/8/88/Calendar_icon.svg" class="icon" alt="Calendar" onclick="openWindow('windowCalendar')">
 </div>
 
 <!-- Windows -->
-<div class="window" id="window1" style="top:50px; left:50px;">
+<div class="window" id="windowApple" style="top:50px; left:50px;">
   <div class="titlebar">
-    <div class="close-btn" onclick="closeWindow('window1')"></div>
+    <div class="close-btn" onclick="closeWindow('windowApple')"></div>
     Apple
   </div>
-  <div style="padding:10px;">Welcome to the mock Apple app!</div>
+  <div class="content">Welcome to the Apple app mockup!</div>
 </div>
 
-<div class="window" id="window2" style="top:100px; left:150px;">
+<div class="window" id="windowMessages" style="top:70px; left:120px;">
   <div class="titlebar">
-    <div class="close-btn" onclick="closeWindow('window2')"></div>
-    Folder
+    <div class="close-btn" onclick="closeWindow('windowMessages')"></div>
+    Messages
   </div>
-  <div style="padding:10px;">This is a folder window.</div>
+  <div class="content">This is a Messages window mockup.</div>
 </div>
 
-<div class="window" id="window3" style="top:150px; left:250px;">
+<div class="window" id="windowMaps" style="top:90px; left:190px;">
   <div class="titlebar">
-    <div class="close-btn" onclick="closeWindow('window3')"></div>
-    Settings
+    <div class="close-btn" onclick="closeWindow('windowMaps')"></div>
+    Maps
   </div>
-  <div style="padding:10px;">Settings panel mockup.</div>
+  <div class="content">Map mockup area.</div>
+</div>
+
+<div class="window" id="windowSafari" style="top:110px; left:260px;">
+  <div class="titlebar">
+    <div class="close-btn" onclick="closeWindow('windowSafari')"></div>
+    Safari
+  </div>
+  <div class="content">Safari browser mockup.</div>
+</div>
+
+<div class="window" id="windowPhotos" style="top:130px; left:330px;">
+  <div class="titlebar">
+    <div class="close-btn" onclick="closeWindow('windowPhotos')"></div>
+    Photos
+  </div>
+  <div class="content">Photos gallery mockup.</div>
+</div>
+
+<div class="window" id="windowCalendar" style="top:150px; left:400px;">
+  <div class="titlebar">
+    <div class="close-btn" onclick="closeWindow('windowCalendar')"></div>
+    Calendar
+  </div>
+  <div class="content">Calendar mockup interface.</div>
 </div>
 
 <script>
