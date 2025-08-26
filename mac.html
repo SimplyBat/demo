@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MacOS Desktop Mockup</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    background: linear-gradient(to bottom, #4b6cb7, #182848);
+    font-family: sans-serif;
+    overflow: hidden;
+  }
+
+  /* Dock */
+  .dock {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 80px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    display: flex;
+    align-items: flex-end;
+    padding: 10px 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+  }
+
+  .dock .icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 10px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .dock .icon:hover {
+    transform: scale(1.5);
+  }
+
+  /* Windows */
+  .window {
+    position: absolute;
+    width: 300px;
+    height: 200px;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    display: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+
+  .window .titlebar {
+    height: 30px;
+    background: #ddd;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    font-weight: bold;
+  }
+
+  .window .close-btn {
+    width: 12px;
+    height: 12px;
+    background: #ff5f57;
+    border-radius: 50%;
+    margin-right: 5px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- Dock -->
+<div class="dock">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" class="icon" alt="Apple" onclick="openWindow('window1')">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Folder_icon.svg" class="icon" alt="Folder" onclick="openWindow('window2')">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/3/3f/Gear_icon.svg" class="icon" alt="Settings" onclick="openWindow('window3')">
+</div>
+
+<!-- Windows -->
+<div class="window" id="window1" style="top:50px; left:50px;">
+  <div class="titlebar">
+    <div class="close-btn" onclick="closeWindow('window1')"></div>
+    Apple
+  </div>
+  <div style="padding:10px;">Welcome to the mock Apple app!</div>
+</div>
+
+<div class="window" id="window2" style="top:100px; left:150px;">
+  <div class="titlebar">
+    <div class="close-btn" onclick="closeWindow('window2')"></div>
+    Folder
+  </div>
+  <div style="padding:10px;">This is a folder window.</div>
+</div>
+
+<div class="window" id="window3" style="top:150px; left:250px;">
+  <div class="titlebar">
+    <div class="close-btn" onclick="closeWindow('window3')"></div>
+    Settings
+  </div>
+  <div style="padding:10px;">Settings panel mockup.</div>
+</div>
+
+<script>
+function openWindow(id){
+  document.getElementById(id).style.display = 'block';
+}
+
+function closeWindow(id){
+  document.getElementById(id).style.display = 'none';
+}
+</script>
+
+</body>
+</html>
