@@ -2,81 +2,88 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Mini Doom Demo</title>
+<title>Mini DOOM</title>
 <style>
-  body { margin: 0; background: #111; }
-  canvas { display: block; margin: auto; background: #444; }
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: black;
+  }
+  canvas {
+    display: block;
+  }
 </style>
 </head>
 <body>
-<canvas id="gameCanvas" width="800" height="600"></canvas>
-
+<canvas id="game"></canvas>
 <script>
-const canvas = document.getElementById('gameCanvas');
+const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-const tileSize = 50;
 const map = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1]
 ];
 
-const player = { x: 75, y: 75, angle: 0 };
+let player = {
+  x: 3.5,
+  y: 3.5,
+  angle: 0,
+  speed: 0
+};
 
 const keys = {};
+
+// Controls
 document.addEventListener('keydown', e => keys[e.key] = true);
 document.addEventListener('keyup', e => keys[e.key] = false);
 
-function drawMap() {
-  for (let y = 0; y < map.length; y++) {
-    for (let x = 0; x < map[0].length; x++) {
-      ctx.fillStyle = map[y][x] ? '#888' : '#222';
-      ctx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
+// Raycasting
+function castRays() {
+  const fov = Math.PI / 3;
+  const numRays = canvas.width;
+  for(let i=0;i<numRays;i++){
+    const rayAngle = player.angle - fov/2 + fov * (i/numRays);
+    let distance = 0;
+    let hit = false;
+    let rayX = player.x;
+    let rayY = player.y;
+    while(!hit && distance<20){
+      rayX += 0.05 * Math.cos(rayAngle);
+      rayY += 0.05 * Math.sin(rayAngle);
+      distance += 0.05;
+      if(map[Math.floor(rayY)][Math.floor(rayX)] === 1) hit = true;
     }
+    const wallHeight = (canvas.height / (distance + 0.001)) * 50;
+    ctx.fillStyle = `rgb(${255 / (distance*0.5)},0,0)`; // shading
+    ctx.fillRect(i, canvas.height/2 - wallHeight/2, 1, wallHeight);
   }
 }
 
-function drawPlayer() {
-  ctx.fillStyle = 'red';
-  ctx.beginPath();
-  ctx.arc(player.x, player.y, 10, 0, Math.PI*2);
-  ctx.fill();
-  // draw direction line
-  ctx.strokeStyle = 'yellow';
-  ctx.beginPath();
-  ctx.moveTo(player.x, player.y);
-  ctx.lineTo(player.x + Math.cos(player.angle)*20, player.y + Math.sin(player.angle)*20);
-  ctx.stroke();
-}
-
-function movePlayer() {
-  const speed = 2;
-  if(keys['ArrowUp']){
-    const nx = player.x + Math.cos(player.angle)*speed;
-    const ny = player.y + Math.sin(player.angle)*speed;
-    if(map[Math.floor(ny/tileSize)][Math.floor(nx/tileSize)] === 0){
-      player.x = nx; player.y = ny;
-    }
-  }
-  if(keys['ArrowDown']){
-    const nx = player.x - Math.cos(player.angle)*speed;
-    const ny = player.y - Math.sin(player.angle)*speed;
-    if(map[Math.floor(ny/tileSize)][Math.floor(nx/tileSize)] === 0){
-      player.x = nx; player.y = ny;
-    }
-  }
-  if(keys['ArrowLeft']) player.angle -= 0.05;
-  if(keys['ArrowRight']) player.angle += 0.05;
-}
-
+// Game loop
 function gameLoop() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawMap();
-  movePlayer();
-  drawPlayer();
+  // Movement
+  if(keys['ArrowUp']) {
+    player.x += 0.05 * Math.cos(player.angle);
+    player.y += 0.05 * Math.sin(player.angle);
+  }
+  if(keys['ArrowDown']) {
+    player.x -= 0.05 * Math.cos(player.angle);
+    player.y -= 0.05 * Math.sin(player.angle);
+  }
+  if(keys['ArrowLeft']) player.angle -= 0.03;
+  if(keys['ArrowRight']) player.angle += 0.03;
+
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  castRays();
   requestAnimationFrame(gameLoop);
 }
 
