@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Mini DOOM Pseudo-3D</title>
+<title>Mini DOOM Working 3D</title>
 <style>
   body { margin:0; overflow:hidden; background:black; }
   canvas { display:block; }
@@ -16,7 +16,8 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 400;
 
-const map = [
+const TILE = 64; // pixels per tile
+const MAP = [
   [1,1,1,1,1,1,1,1,1,1],
   [1,0,0,0,0,0,0,0,0,1],
   [1,0,1,0,1,1,0,1,0,1],
@@ -28,63 +29,66 @@ const map = [
   [1,1,1,1,1,1,1,1,1,1]
 ];
 
-let player = { x:2.5, y:2.5, angle:0 };
+let player = { x: TILE*2.5, y: TILE*2.5, angle: 0 };
+
 const FOV = Math.PI/3;
 const NUM_RAYS = 200;
-const MAX_DEPTH = 20;
+const MAX_DEPTH = TILE*10; // max pixels
 
 const keys = {};
-document.addEventListener('keydown', e => keys[e.key]=true);
-document.addEventListener('keyup', e => keys[e.key]=false);
+document.addEventListener('keydown', e => keys[e.key] = true);
+document.addEventListener('keyup', e => keys[e.key] = false);
 
 function castRays() {
-  const sliceWidth = canvas.width/NUM_RAYS;
+  const sliceWidth = canvas.width / NUM_RAYS;
 
   for(let i=0;i<NUM_RAYS;i++){
     const rayAngle = player.angle - FOV/2 + FOV*(i/NUM_RAYS);
     let distance = 0;
     let hit=false;
-    let rayX=player.x;
-    let rayY=player.y;
+    let rayX = player.x;
+    let rayY = player.y;
 
     while(!hit && distance<MAX_DEPTH){
-      rayX += 0.05*Math.cos(rayAngle);
-      rayY += 0.05*Math.sin(rayAngle);
-      distance += 0.05;
-      if(map[Math.floor(rayY)][Math.floor(rayX)]===1) hit=true;
+      rayX += Math.cos(rayAngle);
+      rayY += Math.sin(rayAngle);
+      distance += 1;
+      const mapX = Math.floor(rayX/TILE);
+      const mapY = Math.floor(rayY/TILE);
+      if(MAP[mapY] && MAP[mapY][mapX] === 1) hit=true;
     }
 
-    distance *= Math.cos(rayAngle - player.angle); // fish-eye correction
-    const wallHeight = Math.min(canvas.height, 300/distance);
+    const correctedDist = distance * Math.cos(rayAngle - player.angle);
+    const wallHeight = (TILE * 320) / correctedDist; // scale to canvas height
 
-    // Ceiling
+    // ceiling
     ctx.fillStyle='#444';
     ctx.fillRect(i*sliceWidth, 0, sliceWidth, canvas.height/2 - wallHeight/2);
 
-    // Floor
+    // floor
     ctx.fillStyle='#222';
     ctx.fillRect(i*sliceWidth, canvas.height/2 + wallHeight/2, sliceWidth, canvas.height/2 - wallHeight/2);
 
-    // Wall
-    const shade = Math.max(50, 255 - distance*20);
+    // wall
+    const shade = Math.max(50, 255 - correctedDist*0.8);
     ctx.fillStyle=`rgb(${shade},0,0)`;
     ctx.fillRect(i*sliceWidth, canvas.height/2 - wallHeight/2, sliceWidth, wallHeight);
   }
 }
 
 function gameLoop(){
-  const moveSpeed = 0.05;
+  const moveSpeed = 2; // pixels per frame
   const rotSpeed = 0.03;
 
   if(keys['ArrowUp']){
     const nx = player.x + moveSpeed*Math.cos(player.angle);
     const ny = player.y + moveSpeed*Math.sin(player.angle);
-    if(map[Math.floor(ny)][Math.floor(nx)]===0){ player.x=nx; player.y=ny; }
+    if(MAP[Math.floor(ny/TILE)][Math.floor(nx/TILE)]===0){ player.x=nx; player.y=ny; }
   }
   if(keys['ArrowDown']){
     const nx = player.x - moveSpeed*Math.cos(player.angle);
     const ny = player.y - moveSpeed*Math.sin(player.angle);
-    if(map[Math.floor(ny)][Math.floor(nx)]===0){ player.x=nx; player.y=ny; }
+    if(MAP[Math.floor(ny/TILE)][Math.floor(nx/TILE)]===0){ player.x=nx; player.y=ny; }
   }
   if(keys['ArrowLeft']) player.angle -= rotSpeed;
   if(keys['ArrowRight']) player.angle += rotSpeed;
