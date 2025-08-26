@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Boss Running Game</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #222;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    #game {
+      position: relative;
+      width: 600px;
+      height: 200px;
+      background: #333;
+      border: 3px solid white;
+      overflow: hidden;
+    }
+
+    #boss {
+      position: absolute;
+      bottom: 0;
+      left: 50px;
+      font-size: 50px;
+      transition: bottom 0.2s;
+    }
+
+    .obstacle {
+      position: absolute;
+      bottom: 0;
+      right: -50px;
+      font-size: 40px;
+      animation: move 3s linear infinite;
+    }
+
+    @keyframes move {
+      from { right: -50px; }
+      to { right: 650px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div id="boss">🌸</div>
+    <div class="obstacle">🐍</div>
+  </div>
+
+  <script>
+    const boss = document.getElementById("boss");
+    const obstacle = document.querySelector(".obstacle");
+    let jumping = false;
+
+    // Jump when spacebar is pressed
+    document.body.addEventListener("keydown", e => {
+      if (e.code === "Space" && !jumping) {
+        jumping = true;
+        boss.style.bottom = "80px"; // jump up
+        setTimeout(() => {
+          boss.style.bottom = "0px"; // fall back
+          jumping = false;
+        }, 500);
+      }
+    });
+
+    // Collision detection
+    setInterval(() => {
+      let bossRect = boss.getBoundingClientRect();
+      let obstacleRect = obstacle.getBoundingClientRect();
+
+      if (
+        bossRect.right > obstacleRect.left &&
+        bossRect.left < obstacleRect.right &&
+        bossRect.bottom > obstacleRect.top
+      ) {
+        alert("Game Over! The Boss was defeated 🐍");
+        location.reload();
+      }
+    }, 100);
+  </script>
+</body>
+</html>
