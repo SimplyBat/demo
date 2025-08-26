@@ -4,14 +4,8 @@
 <meta charset="UTF-8">
 <title>Mini DOOM</title>
 <style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: black;
-  }
-  canvas {
-    display: block;
-  }
+  body { margin: 0; overflow: hidden; background: black; }
+  canvas { display: block; }
 </style>
 </head>
 <body>
@@ -22,60 +16,75 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// Map: 1 = wall, 0 = empty
 const map = [
-  [1,1,1,1,1,1,1,1],
-  [1,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,1],
-  [1,1,1,1,1,1,1,1]
+  [1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,0,1,0,1,1,0,1,0,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,1,1,0,1,1,0,1,1,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,0,1,0,1,1,0,1,0,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1],
 ];
 
-let player = {
-  x: 3.5,
-  y: 3.5,
-  angle: 0,
-  speed: 0
-};
-
-const keys = {};
+let player = { x: 2.5, y: 2.5, angle: 0 };
 
 // Controls
+const keys = {};
 document.addEventListener('keydown', e => keys[e.key] = true);
 document.addEventListener('keyup', e => keys[e.key] = false);
 
-// Raycasting
+// Raycasting function
 function castRays() {
   const fov = Math.PI / 3;
   const numRays = canvas.width;
-  for(let i=0;i<numRays;i++){
+  for(let i = 0; i < numRays; i++){
     const rayAngle = player.angle - fov/2 + fov * (i/numRays);
     let distance = 0;
     let hit = false;
     let rayX = player.x;
     let rayY = player.y;
-    while(!hit && distance<20){
-      rayX += 0.05 * Math.cos(rayAngle);
-      rayY += 0.05 * Math.sin(rayAngle);
-      distance += 0.05;
+
+    while(!hit && distance < 20){
+      rayX += 0.02 * Math.cos(rayAngle);
+      rayY += 0.02 * Math.sin(rayAngle);
+      distance += 0.02;
       if(map[Math.floor(rayY)][Math.floor(rayX)] === 1) hit = true;
     }
-    const wallHeight = (canvas.height / (distance + 0.001)) * 50;
-    ctx.fillStyle = `rgb(${255 / (distance*0.5)},0,0)`; // shading
+
+    // Correct fish-eye
+    distance *= Math.cos(rayAngle - player.angle);
+
+    // Wall height
+    const wallHeight = Math.min(canvas.height, (canvas.height / distance) * 0.8);
+
+    // Draw floor and ceiling
+    ctx.fillStyle = '#666'; // ceiling
+    ctx.fillRect(i, 0, 1, canvas.height/2 - wallHeight/2);
+    ctx.fillStyle = '#222'; // floor
+    ctx.fillRect(i, canvas.height/2 + wallHeight/2, 1, canvas.height/2 - wallHeight/2);
+
+    // Wall color shading
+    let shade = Math.min(255, 255/distance);
+    ctx.fillStyle = `rgb(${shade},0,0)`;
     ctx.fillRect(i, canvas.height/2 - wallHeight/2, 1, wallHeight);
   }
 }
 
 // Game loop
 function gameLoop() {
-  // Movement
-  if(keys['ArrowUp']) {
-    player.x += 0.05 * Math.cos(player.angle);
-    player.y += 0.05 * Math.sin(player.angle);
+  // Player movement
+  if(keys['ArrowUp']){
+    let nx = player.x + 0.05 * Math.cos(player.angle);
+    let ny = player.y + 0.05 * Math.sin(player.angle);
+    if(map[Math.floor(ny)][Math.floor(nx)] === 0){ player.x = nx; player.y = ny; }
   }
-  if(keys['ArrowDown']) {
-    player.x -= 0.05 * Math.cos(player.angle);
-    player.y -= 0.05 * Math.sin(player.angle);
+  if(keys['ArrowDown']){
+    let nx = player.x - 0.05 * Math.cos(player.angle);
+    let ny = player.y - 0.05 * Math.sin(player.angle);
+    if(map[Math.floor(ny)][Math.floor(nx)] === 0){ player.x = nx; player.y = ny; }
   }
   if(keys['ArrowLeft']) player.angle -= 0.03;
   if(keys['ArrowRight']) player.angle += 0.03;
