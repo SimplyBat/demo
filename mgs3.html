@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MGS3 Demo Game</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #111; /* dark stealth background */
+    font-family: sans-serif;
+  }
+
+  #game {
+    position: relative;
+    width: 800px;
+    height: 300px;
+    background-color: #2b2b2b;
+    border: 3px solid #fff;
+    overflow: hidden;
+  }
+
+  #player {
+    position: absolute;
+    bottom: 50px;
+    left: 50px;
+    width: 40px;
+    height: 60px;
+    background-color: white; /* placeholder for The Boss PNG */
+    transition: bottom 0.2s, left 0.1s;
+  }
+
+  .enemy {
+    position: absolute;
+    bottom: 50px;
+    width: 40px;
+    height: 60px;
+    background-color: red; /* placeholder for enemy PNG */
+  }
+
+  #ground {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 50px;
+    background-color: #444;
+  }
+
+  #scoreboard {
+    position: absolute;
+    top: 5px;
+    left: 10px;
+    color: white;
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+  <div id="game">
+    <div id="scoreboard">Score: <span id="score">0</span></div>
+    <div id="player"></div>
+    <div id="ground"></div>
+  </div>
+
+<script>
+const game = document.getElementById('game');
+const player = document.getElementById('player');
+const scoreDisplay = document.getElementById('score');
+
+let score = 0;
+let jumping = false;
+let enemies = [];
+
+// Player movement
+document.addEventListener('keydown', e => {
+  if(e.code === 'ArrowRight') {
+    let left = parseInt(player.style.left || 50);
+    if(left < 760) player.style.left = left + 10 + 'px';
+  }
+  if(e.code === 'ArrowLeft') {
+    let left = parseInt(player.style.left || 50);
+    if(left > 0) player.style.left = left - 10 + 'px';
+  }
+  if(e.code === 'Space' && !jumping) {
+    jumping = true;
+    player.style.bottom = '130px';
+    setTimeout(() => {
+      player.style.bottom = '50px';
+      jumping = false;
+    }, 500);
+  }
+});
+
+// Enemy creation
+function spawnEnemy() {
+  let enemy = document.createElement('div');
+  enemy.className = 'enemy';
+  enemy.style.left = '800px';
+  game.appendChild(enemy);
+  enemies.push(enemy);
+}
+
+// Move enemies
+function moveEnemies() {
+  enemies.forEach((enemy, index) => {
+    let left = parseInt(enemy.style.left);
+    enemy.style.left = left - 5 + 'px';
+    // Remove if off-screen
+    if(left < -50) {
+      game.removeChild(enemy);
+      enemies.splice(index,1);
+      score++;
+      scoreDisplay.textContent = score;
+    }
+    // Collision detection
+    let playerRect = player.getBoundingClientRect();
+    let enemyRect = enemy.getBoundingClientRect();
+    if(
+      playerRect.right > enemyRect.left &&
+      playerRect.left < enemyRect.right &&
+      playerRect.bottom > enemyRect.top
+    ){
+      alert('Game Over! Score: '+score);
+      location.reload();
+    }
+  });
+}
+
+// Game loop
+setInterval(moveEnemies, 50);
+setInterval(spawnEnemy, 2000); // spawn every 2 sec
+</script>
+</body>
+</html>
