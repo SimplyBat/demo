@@ -1,62 +1,358 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>macOS Desktop Mockup (Embedded Icons)</title>
+<meta charset="utf-8" />
+<title>macOS Desktop Mockup — Custom SVG Icons</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-  body {
-    margin: 0;
-    height: 100vh;
-    background: url("https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=80") no-repeat center center/cover;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    overflow: hidden;
+  :root{
+    --dock-bg: rgba(255,255,255,0.12);
+    --dock-pad: 12px;
   }
 
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg,#4b6cb7 0%, #182848 100%);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    overflow:hidden;
+  }
+
+  /* Dock */
   .dock {
     position: absolute;
-    bottom: 10px;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:18px;
+    display:flex;
+    gap:14px;
+    padding: var(--dock-pad);
+    background: var(--dock-bg);
+    border-radius: 22px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+    backdrop-filter: blur(6px);
+    align-items:flex-end;
+  }
+
+  /* shared icon style */
+  .dock .dock-item{
+    width:64px;
+    height:64px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition: transform 160ms cubic-bezier(.2,.9,.2,1), box-shadow 160ms;
+    transform-origin: center bottom;
+  }
+  /* simple magnify-on-hover (not the Mac magic curve, but nice) */
+  .dock .dock-item:hover{
+    transform: translateY(-6px) scale(1.28);
+    box-shadow: 0 10px 18px rgba(0,0,0,0.35);
+  }
+
+  /* windows */
+  .window{
+    position:absolute;
+    width:360px;
+    height:240px;
+    background:white;
+    border-radius:12px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    display:none;
+    overflow:hidden;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .titlebar{
+    height:34px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding: 0 12px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.04));
+    font-weight:600;
+  }
+  .controls{
+    display:flex;
+    gap:8px;
+    margin-right:8px;
+  }
+  .dot{
+    width:12px; height:12px; border-radius:50%;
+  }
+  .dot.close{ background:#ff5f57;}
+  .dot.min{ background:#ffbd2e;}
+  .dot.max{ background:#28c840;}
+  .window .content{
+    padding:14px;
+    font-size:14px;
+    color:#222;
+  }
+
+  /* small labels under dock icons */
+  .dock-label{
+    position: absolute;
+    bottom: 100px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 10px;
-    display: flex;
-    gap: 15px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding:6px 8px;
+    border-radius:8px;
+    font-size:12px;
+    display:none;
+    pointer-events:none;
+    white-space:nowrap;
   }
 
-  .dock img {
-    width: 60px;
-    height: 60px;
-    border-radius: 15px;
-    transition: transform 0.2s;
-    cursor: pointer;
-    object-fit: contain;
-  }
+  /* show a label when hovering (handled in JS for correct positioning) */
+  .label-visible{ display:block; }
 
-  .dock img:hover {
-    transform: scale(1.3);
+  /* responsive: keep dock smaller on narrow screens */
+  @media (max-width:480px){
+    .dock{ padding:8px; gap:10px; bottom:8px; }
+    .dock .dock-item{ width:48px; height:48px; }
   }
 </style>
 </head>
 <body>
 
-<div class="dock">
+<!-- Dock -->
+<div class="dock" id="dock">
   <!-- Finder -->
-  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUh..." alt="Finder">
+  <div class="dock-item" data-label="Finder" onclick="openWindow('win-finder', this)" onmouseenter="showLabel(event,this)">
+    <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden>
+      <!-- rounded square -->
+      <defs>
+        <linearGradient id="finderG" x1="0" x2="1">
+          <stop offset="0" stop-color="#9dd6ff"/>
+          <stop offset="1" stop-color="#5aa8ff"/>
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" rx="12" ry="12" width="60" height="60" fill="url(#finderG)"/>
+      <!-- split face -->
+      <rect x="34" y="8" width="18" height="46" rx="6" fill="#6fb1ff" opacity="0.9"/>
+      <!-- smiley-ish eyes -->
+      <circle cx="22" cy="22" r="3.2" fill="#08304a"/>
+      <circle cx="34" cy="22" r="3.2" fill="#08304a"/>
+      <path d="M18 34 q6 6 14 0" fill="none" stroke="#08304a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
   <!-- Messages -->
-  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUh..." alt="Messages">
+  <div class="dock-item" data-label="Messages" onclick="openWindow('win-messages', this)" onmouseenter="showLabel(event,this)">
+    <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden>
+      <defs>
+        <linearGradient id="msgG" x1="0" x2="1">
+          <stop offset="0" stop-color="#6be06b"/>
+          <stop offset="1" stop-color="#35c53a"/>
+        </linearGradient>
+      </defs>
+      <rect x="6" y="8" rx="10" ry="10" width="52" height="40" fill="url(#msgG)"/>
+      <!-- tail -->
+      <path d="M18 42 L14 50 L22 44 Z" fill="#35c53a"/>
+      <!-- bubble detail -->
+      <rect x="16" y="18" rx="3" width="32" height="6" fill="rgba(255,255,255,0.18)"/>
+      <rect x="16" y="26" rx="3" width="22" height="6" fill="rgba(255,255,255,0.18)"/>
+    </svg>
+  </div>
+
   <!-- Maps -->
-  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUh..." alt="Maps">
+  <div class="dock-item" data-label="Maps" onclick="openWindow('win-maps', this)" onmouseenter="showLabel(event,this)">
+    <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden>
+      <rect x="2" y="6" rx="8" width="60" height="52" fill="#fff6e6"/>
+      <path d="M6 14 L20 10 L36 14 L54 10 L58 14" fill="none" stroke="#c1a56b" stroke-width="2"/>
+      <!-- route -->
+      <path d="M12 46 Q26 30 38 34 Q48 38 52 28" fill="none" stroke="#2b8cff" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="12" cy="46" r="3.5" fill="#2b8cff"/>
+      <circle cx="52" cy="28" r="4" fill="#ff6b6b"/>
+    </svg>
+  </div>
+
   <!-- Safari -->
-  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUh..." alt="Safari">
+  <div class="dock-item" data-label="Safari" onclick="openWindow('win-safari', this)" onmouseenter="showLabel(event,this)">
+    <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden>
+      <defs>
+        <radialGradient id="sG" cx="0.35" cy="0.35">
+          <stop offset="0" stop-color="#d9f0ff" />
+          <stop offset="1" stop-color="#b0dbff" />
+        </radialGradient>
+      </defs>
+      <circle cx="32" cy="32" r="26" fill="url(#sG)" stroke="#4da6ff" stroke-width="2"/>
+      <!-- compass needle -->
+      <g transform="translate(32,32) rotate(-25)">
+        <path d="M0 -14 L6 0 L0 2 L-6 0 Z" fill="#ff5b5b"/>
+        <path d="M0 14 L6 0 L0 -2 L-6 0 Z" fill="#4f83ff" opacity="0.95"/>
+      </g>
+      <circle cx="32" cy="32" r="4" fill="#fff"/>
+    </svg>
+  </div>
+
   <!-- Photos -->
-  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUh..." alt="Photos">
+  <div class="dock-item" data-label="Photos" onclick="openWindow('win-photos', this)" onmouseenter="showLabel(event,this)">
+    <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden>
+      <rect x="2" y="2" rx="12" width="60" height="60" fill="#fff"/>
+      <!-- petals: 6 petals rotated -->
+      <g transform="translate(32,32)">
+        <g transform="rotate(0)"><ellipse rx="10" ry="16" fill="#ff6b6b"/></g>
+        <g transform="rotate(60)"><ellipse rx="10" ry="16" fill="#ffcf4b"/></g>
+        <g transform="rotate(120)"><ellipse rx="10" ry="16" fill="#79d66b"/></g>
+        <g transform="rotate(180)"><ellipse rx="10" ry="16" fill="#4fd0ff"/></g>
+        <g transform="rotate(240)"><ellipse rx="10" ry="16" fill="#a48bff"/></g>
+        <g transform="rotate(300)"><ellipse rx="10" ry="16" fill="#ff9ad6"/></g>
+        <circle r="6" fill="#fff"/>
+      </g>
+    </svg>
+  </div>
+
   <!-- Calendar -->
-  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUh..." alt="Calendar">
-  <!-- Apple Logo -->
-  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUh..." alt="Apple Logo">
+  <div class="dock-item" data-label="Calendar" onclick="openWindow('win-calendar', this)" onmouseenter="showLabel(event,this)">
+    <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden>
+      <rect x="4" y="8" rx="6" width="56" height="48" fill="#fff"/>
+      <rect x="4" y="8" width="56" height="12" fill="#ff4b4b"/>
+      <text x="32" y="36" font-size="18" text-anchor="middle" fill="#222" font-family="sans-serif" font-weight="700">27</text>
+      <text x="32" y="20" font-size="9" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="700">MON</text>
+    </svg>
+  </div>
+
+  <!-- Apple logo (stand-in) -->
+  <div class="dock-item" data-label="About" onclick="openWindow('win-apple', this)" onmouseenter="showLabel(event,this)">
+    <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden>
+      <!-- simple apple silhouette -->
+      <path d="M40.6 18.2c-3.1 0-6 1.8-7.6 1.8-1.6 0-4.4-1.7-7.2-1.7-3.7 0-7.1 2.2-9 6-3.8 7.3-.9 18.3 2.7 24.4 1.8 3.1 3.9 6.6 6.6 6.5 2.6-.1 3.6-1.6 6.8-1.6 3.1 0 3.9 1.6 6.9 1.5 2.8-.1 4.6-3.1 6.4-6.2 1.9-3.4 2.7-6.7 2.8-6.9-.1-.1-5.2-2-5.3-7.9-.1-7.9 6.4-11.6 6.8-11.8-3.8-5.6-9.8-6-11.7-6z" fill="#ffffff"/>
+      <path d="M36 9c1.3-1.6 2.2-4 1.9-6.3-1.8.1-4 1.2-5.3 2.8-1.1 1.3-2 3.6-1.7 5.8 1.8.1 3.9-1.1 5.1-2.3z" fill="#ffffff"/>
+    </svg>
+  </div>
+
 </div>
 
+<!-- small floating label -->
+<div id="dockLabel" class="dock-label"></div>
+
+<!-- sample windows for apps -->
+<div id="win-finder" class="window" style="left:60px; top:60px;">
+  <div class="titlebar">
+    <div class="controls"><div class="dot close" onclick="closeWindow('win-finder')"></div><div class="dot min"></div><div class="dot max"></div></div>
+    Finder
+  </div>
+  <div class="content">Finder window mockup — your files live here.</div>
+</div>
+
+<div id="win-messages" class="window" style="left:140px; top:90px;">
+  <div class="titlebar">
+    <div class="controls"><div class="dot close" onclick="closeWindow('win-messages')"></div><div class="dot min"></div><div class="dot max"></div></div>
+    Messages
+  </div>
+  <div class="content">Messages mockup — chat content would appear here.</div>
+</div>
+
+<div id="win-maps" class="window" style="left:220px; top:90px;">
+  <div class="titlebar">
+    <div class="controls"><div class="dot close" onclick="closeWindow('win-maps')"></div><div class="dot min"></div><div class="dot max"></div></div>
+    Maps
+  </div>
+  <div class="content">Maps mockup — route and map preview.</div>
+</div>
+
+<div id="win-safari" class="window" style="left:300px; top:120px;">
+  <div class="titlebar">
+    <div class="controls"><div class="dot close" onclick="closeWindow('win-safari')"></div><div class="dot min"></div><div class="dot max"></div></div>
+    Safari
+  </div>
+  <div class="content">Safari mockup — web content preview.</div>
+</div>
+
+<div id="win-photos" class="window" style="left:380px; top:130px;">
+  <div class="titlebar">
+    <div class="controls"><div class="dot close" onclick="closeWindow('win-photos')"></div><div class="dot min"></div><div class="dot max"></div></div>
+    Photos
+  </div>
+  <div class="content">Photos mockup — view your albums here.</div>
+</div>
+
+<div id="win-calendar" class="window" style="left:460px; top:150px;">
+  <div class="titlebar">
+    <div class="controls"><div class="dot close" onclick="closeWindow('win-calendar')"></div><div class="dot min"></div><div class="dot max"></div></div>
+    Calendar
+  </div>
+  <div class="content">Calendar mockup — upcoming events displayed here.</div>
+</div>
+
+<div id="win-apple" class="window" style="left:540px; top:170px;">
+  <div class="titlebar">
+    <div class="controls"><div class="dot close" onclick="closeWindow('win-apple')"></div><div class="dot min"></div><div class="dot max"></div></div>
+    About
+  </div>
+  <div class="content">About this mockup — created with SVG icons.</div>
+</div>
+
+<script>
+  // Open/close windows
+  function openWindow(id, el){
+    // show and bring to front
+    const w = document.getElementById(id);
+    if(!w) return;
+    w.style.display = 'block';
+    bringToFront(w);
+  }
+  function closeWindow(id){
+    const w = document.getElementById(id);
+    if(w) w.style.display = 'none';
+  }
+  // simple z-order handling
+  let zIndex = 100;
+  function bringToFront(el){
+    el.style.zIndex = ++zIndex;
+  }
+
+  // dock label handling
+  const dockLabel = document.getElementById('dockLabel');
+  let labelTimeout = null;
+  function showLabel(evt, el){
+    const label = el.getAttribute('data-label') || '';
+    dockLabel.textContent = label;
+    // position label centered on icon
+    const rect = el.getBoundingClientRect();
+    dockLabel.style.left = (rect.left + rect.width/2) + 'px';
+    dockLabel.style.bottom = (window.innerHeight - rect.top + 12) + 'px';
+    dockLabel.classList.add('label-visible');
+    clearTimeout(labelTimeout);
+    labelTimeout = setTimeout(()=> dockLabel.classList.remove('label-visible'), 1800);
+  }
+
+  // hide label on mouseout
+  document.getElementById('dock').addEventListener('mouseleave', ()=> {
+    dockLabel.classList.remove('label-visible');
+  });
+
+  // allow dragging windows (basic)
+  let drag = null;
+  document.addEventListener('mousedown', e=>{
+    const tb = e.target.closest('.titlebar');
+    if(tb){
+      const win = tb.closest('.window');
+      bringToFront(win);
+      drag = {
+        el: win,
+        startX: e.clientX,
+        startY: e.clientY,
+        origLeft: parseInt(win.style.left || 100, 10),
+        origTop: parseInt(win.style.top || 80, 10)
+      };
+      e.preventDefault();
+    }
+  });
+  document.addEventListener('mousemove', e=>{
+    if(drag){
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      drag.el.style.left = (drag.origLeft + dx) + 'px';
+      drag.el.style.top = (drag.origTop + dy) + 'px';
+    }
+  });
+  document.addEventListener('mouseup', ()=> drag = null);
+</script>
 </body>
 </html>
