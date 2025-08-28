@@ -1,132 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Cool Website</title>
-  <style>
-    /* Reset some default styles */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Arial', sans-serif;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>macOS Mockup</title>
+<style>
+  /* Reset */
+  * { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 
-    body {
-      background: linear-gradient(to right, #6a11cb, #2575fc);
-      color: #fff;
-      line-height: 1.6;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
+  body {
+    background: url('https://i.imgur.com/4NJy0Pa.jpg') no-repeat center center fixed;
+    background-size: cover;
+    height: 100vh;
+    overflow: hidden;
+  }
 
-    header {
-      background-color: rgba(0,0,0,0.5);
-      padding: 20px;
-      text-align: center;
-    }
+  /* Dock */
+  .dock {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 10px 20px;
+    z-index: 100;
+  }
 
-    header h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-    }
+  .dock img {
+    width: 64px;
+    margin: 0 10px;
+    transition: transform 0.2s;
+    cursor: pointer;
+  }
 
-    nav a {
-      color: #fff;
-      text-decoration: none;
-      margin: 0 15px;
-      font-weight: bold;
-      transition: color 0.3s;
-    }
+  .dock img:hover {
+    transform: scale(1.5);
+  }
 
-    nav a:hover {
-      color: #ffeb3b;
-    }
+  /* Window */
+  .window {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    width: 500px;
+    height: 300px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    cursor: grab;
+  }
 
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 40px 20px;
-    }
+  .window-header {
+    height: 30px;
+    background: rgba(240,240,240,0.9);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+  }
 
-    main h2 {
-      font-size: 2rem;
-      margin-bottom: 20px;
-    }
+  .window-header .buttons {
+    display: flex;
+    gap: 8px;
+  }
 
-    main p {
-      font-size: 1.2rem;
-      max-width: 700px;
-      margin-bottom: 30px;
-    }
+  .button {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
 
-    .btn {
-      display: inline-block;
-      background-color: #ffeb3b;
-      color: #333;
-      padding: 12px 30px;
-      font-weight: bold;
-      border-radius: 25px;
-      text-decoration: none;
-      transition: background-color 0.3s;
-    }
+  .close { background: #ff5f57; }
+  .minimize { background: #ffbd2e; }
+  .maximize { background: #28c940; }
 
-    .btn:hover {
-      background-color: #f1c40f;
-    }
+  .window-content {
+    flex: 1;
+    padding: 20px;
+    overflow: auto;
+  }
 
-    footer {
-      background-color: rgba(0,0,0,0.5);
-      text-align: center;
-      padding: 15px;
-    }
+  h2 { margin-bottom: 10px; }
 
-    footer p {
-      font-size: 0.9rem;
-    }
-
-    /* Responsive */
-    @media (max-width: 600px) {
-      header h1 {
-        font-size: 1.8rem;
-      }
-      main h2 {
-        font-size: 1.5rem;
-      }
-      nav a {
-        display: block;
-        margin: 10px 0;
-      }
-    }
-  </style>
+</style>
 </head>
 <body>
-  <header>
-    <h1>Welcome to My Website</h1>
-    <nav>
-      <a href="#about">About</a>
-      <a href="#services">Services</a>
-      <a href="#contact">Contact</a>
-    </nav>
-  </header>
 
-  <main>
-    <h2>Building Modern Websites</h2>
-    <p>
-      This is a simple but visually appealing HTML website with CSS styling.
-      You can customize it, add sections, or even integrate JavaScript for interactivity.
-    </p>
-    <a href="#contact" class="btn">Get in Touch</a>
-  </main>
+<!-- Dock -->
+<div class="dock">
+  <img src="https://img.icons8.com/ios-filled/100/mac-os.png" alt="Finder" title="Finder">
+  <img src="https://img.icons8.com/ios-filled/100/safari.png" alt="Safari" title="Safari">
+  <img src="https://img.icons8.com/ios-filled/100/notes.png" alt="Notes" title="Notes">
+  <img src="https://img.icons8.com/ios-filled/100/calendar.png" alt="Calendar" title="Calendar">
+</div>
 
-  <footer>
-    <p>© 2025 My Cool Website. All Rights Reserved.</p>
-  </footer>
+<!-- Sample Window -->
+<div class="window" id="window1">
+  <div class="window-header">
+    <div class="buttons">
+      <div class="button close"></div>
+      <div class="button minimize"></div>
+      <div class="button maximize"></div>
+    </div>
+    <span style="margin-left: 10px; font-weight:bold;">Finder</span>
+  </div>
+  <div class="window-content">
+    <h2>Welcome to macOS Mockup</h2>
+    <p>This is a sample window. You can drag it around, and the dock icons scale when you hover over them.</p>
+  </div>
+</div>
+
+<script>
+  // Draggable window logic
+  const windows = document.querySelectorAll('.window');
+  windows.forEach(win => {
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    const header = win.querySelector('.window-header');
+
+    header.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      offsetX = e.clientX - win.getBoundingClientRect().left;
+      offsetY = e.clientY - win.getBoundingClientRect().top;
+      win.style.cursor = 'grabbing';
+      win.style.zIndex = 1000; // bring to front
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        win.style.left = e.clientX - offsetX + 'px';
+        win.style.top = e.clientY - offsetY + 'px';
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      win.style.cursor = 'grab';
+    });
+  });
+</script>
+
 </body>
 </html>
