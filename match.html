@@ -1,105 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>macOS Mockup</title>
-  <style>
-    /* Reset */
-    * { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>macOS Mockup</title>
+<style>
+  /* Reset */
+  * { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 
-    body {
-      background: url('path/to/macos-tahoe-wallpaper.jpg') no-repeat center center fixed;
-      background-size: cover;
-      height: 100vh;
-      overflow: hidden;
-    }
+  body {
+    background: url('https://support.apple.com/library/content/dam/edam/applecare/images/en_US/macos/macos-sonoma-wallpaper.jpg') no-repeat center center fixed;
+    background-size: cover;
+    height: 100vh;
+    overflow: hidden;
+  }
 
-    /* Dock */
-    .dock {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(20px);
-      border-radius: 20px;
-      padding: 10px 20px;
-      z-index: 100;
-    }
+  /* Dock */
+  .dock {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 10px 20px;
+    z-index: 100;
+  }
 
-    .dock img {
-      width: 64px;
-      margin: 0 10px;
-      transition: transform 0.2s;
-      cursor: pointer;
-    }
+  .dock img {
+    width: 64px;
+    margin: 0 10px;
+    transition: transform 0.2s;
+    cursor: pointer;
+  }
 
-    .dock img:hover {
-      transform: scale(1.5);
-    }
+  .dock img:hover {
+    transform: scale(1.5);
+  }
 
-    /* Window */
-    .window {
-      position: absolute;
-      top: 50px;
-      left: 50px;
-      width: 500px;
-      height: 300px;
-      background: rgba(255,255,255,0.95);
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      z-index: 10;
-      cursor: grab;
-    }
+  /* Window */
+  .window {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    width: 500px;
+    height: 300px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    cursor: grab;
+  }
 
-    .window-header {
-      height: 30px;
-      background: rgba(240,240,240,0.9);
-      display: flex;
-      align-items: center;
-      padding: 0 10px;
-    }
+  .window-header {
+    height: 30px;
+    background: rgba(240,240,240,0.9);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+  }
 
-    .window-header .buttons {
-      display: flex;
-      gap: 8px;
-    }
+  .window-header .buttons {
+    display: flex;
+    gap: 8px;
+  }
 
-    .button {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-    }
+  .button {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
 
-    .close { background: #ff5f57; }
-    .minimize { background: #ffbd2e; }
-    .maximize { background: #28c940; }
+  .close { background: #ff5f57; }
+  .minimize { background: #ffbd2e; }
+  .maximize { background: #28c940; }
 
-    .window-content {
-      flex: 1;
-      padding: 20px;
-      overflow: auto;
-    }
+  .window-content {
+    flex: 1;
+    padding: 20px;
+    overflow: auto;
+  }
 
-    h2 { margin-bottom: 10px; }
-
-  </style>
+  h2 { margin-bottom: 10px; }
+</style>
 </head>
 <body>
 
-<!-- Dock -->
+<!-- Dock with restored icons -->
 <div class="dock">
-  <img src="path/to/finder-icon.png" alt="Finder" title="Finder">
-  <img src="path/to/safari-icon.png" alt="Safari" title="Safari">
-  <img src="path/to/notes-icon.png" alt="Notes" title="Notes">
-  <img src="path/to/calendar-icon.png" alt="Calendar" title="Calendar">
+  <img src="https://img.icons8.com/ios-filled/100/mac-os.png" alt="Finder" title="Finder">
+  <img src="https://img.icons8.com/ios-filled/100/safari.png" alt="Safari" title="Safari">
+  <img src="https://img.icons8.com/ios-filled/100/notes.png" alt="Notes" title="Notes">
+  <img src="https://img.icons8.com/ios-filled/100/calendar.png" alt="Calendar" title="Calendar">
 </div>
 
 <!-- Sample Window -->
