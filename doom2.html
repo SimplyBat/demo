@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini-Doom Clone</title>
+<title>Mini-Doom Clone with Pixel Textures</title>
 <style>
   html, body { margin:0; padding:0; overflow:hidden; background:black; }
   canvas { display:block; }
@@ -23,13 +23,12 @@
 </div>
 
 <script>
-// Canvas setup
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// Map setup (0 = empty, 1 = wall)
+// Map (0 = empty, 1 = wall)
 const map = [
   [1,1,1,1,1,1,1,1,1,1],
   [1,0,0,0,0,0,0,0,0,1],
@@ -41,21 +40,8 @@ const map = [
   [1,1,1,1,1,1,1,1,1,1],
 ];
 
-// Textures
-const wallTexture = new Image();
-wallTexture.src = 'https://i.imgur.com/9b8Zp8N.jpg'; // Brick texture
-
-const enemyTexture = new Image();
-enemyTexture.src = 'https://i.imgur.com/q1bHqfG.png'; // Red blob
-
-// Player setup
-const player = {
-  x: 3.5,
-  y: 3.5,
-  angle: 0,
-  fov: Math.PI/3,
-  speed: 0.05
-};
+// Player
+const player = { x:3.5, y:3.5, angle:0, fov:Math.PI/3, speed:0.05 };
 
 // Enemies
 let enemies = [
@@ -63,82 +49,105 @@ let enemies = [
   {x:3.5, y:6.5, health:50}
 ];
 
-// Key input
+// Input
 const keys = {};
 document.addEventListener('keydown', e=>keys[e.key]=true);
 document.addEventListener('keyup', e=>keys[e.key]=false);
 
-// Raycasting function
-function castRays() {
+// Procedural wall texture
+function drawWallTexture(x, y, width, height, shade){
+  const block = 4;
+  for(let i=0;i<width;i+=block){
+    for(let j=0;j<height;j+=block){
+      const color = ((i+j)%16 < 8) ? shade : shade*0.7;
+      ctx.fillStyle = `rgb(${color},${color/1.2},${color/1.5})`;
+      ctx.fillRect(x+i, y+j, block, block);
+    }
+  }
+}
+
+// Procedural enemy texture
+function drawEnemyTexture(x, y, size){
+  const block = 4;
+  for(let i=0;i<size;i+=block){
+    for(let j=0;j<size;j+=block){
+      const color = ((i+j)%8 <4) ? 200 : 150;
+      ctx.fillStyle = `rgb(${color},0,0)`;
+      ctx.fillRect(x+i, y+j, block, block);
+    }
+  }
+}
+
+// Raycasting
+function castRays(){
   const numRays = canvas.width;
   const stripWidth = canvas.width / numRays;
   for(let i=0;i<numRays;i++){
     const rayAngle = (player.angle - player.fov/2) + (i/numRays)*player.fov;
     let distance = 0;
     let hit = false;
-    let hitX, hitY, textureX;
-    let stepSize = 0.01;
-    
+    let wallType = 0;
+
     while(!hit && distance<20){
-      distance += stepSize;
+      distance += 0.01;
       const testX = Math.floor(player.x + Math.cos(rayAngle)*distance);
       const testY = Math.floor(player.y + Math.sin(rayAngle)*distance);
       if(map[testY] && map[testY][testX] > 0){
         hit = true;
-        hitX = testX;
-        hitY = testY;
-        textureX = (player.x + Math.cos(rayAngle)*distance) % 1;
+        wallType = map[testY][testX];
       }
     }
 
     if(hit){
       const wallHeight = (canvas.height / distance) * 0.8;
-      ctx.drawImage(
-        wallTexture,
-        textureX*wallTexture.width, 0, 1, wallTexture.height,
-        i*stripWidth, canvas.height/2 - wallHeight/2, stripWidth, wallHeight
-      );
+      drawWallTexture(i*stripWidth, canvas.height/2 - wallHeight/2, stripWidth, wallHeight, 200);
     }
   }
 }
 
-// Draw enemies
-function drawEnemies() {
+// Draw enemies with simple sprite scaling
+function drawEnemies(){
   enemies.forEach(enemy=>{
     const dx = enemy.x - player.x;
     const dy = enemy.y - player.y;
     const distance = Math.sqrt(dx*dx + dy*dy);
     const angleToEnemy = Math.atan2(dy, dx) - player.angle;
-    if(Math.abs(angleToEnemy) < player.fov/2){
+    if(Math.abs(angleToEnemy)<player.fov/2){
       const size = (canvas.height / distance) * 0.8;
       const screenX = (0.5 + (angleToEnemy/player.fov)) * canvas.width - size/2;
-      ctx.drawImage(enemyTexture, screenX, canvas.height/2 - size/2, size, size);
+      drawEnemyTexture(screenX, canvas.height/2 - size/2, size);
     }
   });
+}
+
+// Collision detection
+function movePlayer(dx, dy){
+  const nextX = player.x + dx;
+  const nextY = player.y + dy;
+  if(map[Math.floor(player.y)][Math.floor(nextX)] === 0) player.x = nextX;
+  if(map[Math.floor(nextY)][Math.floor(player.x)] === 0) player.y = nextY;
 }
 
 // Game loop
 function gameLoop(){
   // Movement
-  if(keys['w']) player.x += Math.cos(player.angle)*player.speed;
-  if(keys['s']) player.x -= Math.cos(player.angle)*player.speed;
-  if(keys['w']) player.y += Math.sin(player.angle)*player.speed;
-  if(keys['s']) player.y -= Math.sin(player.angle)*player.speed;
+  if(keys['w']) movePlayer(Math.cos(player.angle)*player.speed, Math.sin(player.angle)*player.speed);
+  if(keys['s']) movePlayer(-Math.cos(player.angle)*player.speed, -Math.sin(player.angle)*player.speed);
   if(keys['a']) player.angle -= 0.03;
   if(keys['d']) player.angle += 0.03;
 
   // Clear
-  ctx.fillStyle = 'black';
+  ctx.fillStyle='black';
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // Draw 3D
+  // 3D rendering
   castRays();
   drawEnemies();
 
   requestAnimationFrame(gameLoop);
 }
 
-wallTexture.onload = () => enemyTexture.onload = () => gameLoop();
+gameLoop();
 </script>
 </body>
 </html>
