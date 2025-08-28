@@ -1,726 +1,144 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mini-Doom Homage — Textured Walls & Textured Enemies</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini-Doom Clone</title>
 <style>
-  :root { --accent:#ff4d3f; --accent2:#ffd14d; }
-  html,body{height:100%;margin:0;background:#050505;color:#ddd;font-family:system-ui,-apple-system,Segoe UI,Roboto;}
-  canvas#game{display:block;width:100%;height:100vh;background:#000;}
-  #minimap{position:absolute;left:12px;top:12px;background:rgba(0,0,0,0.28);padding:8px;border-radius:8px;}
-  #help{position:absolute;right:12px;top:12px;color:#ddd;font-size:13px;background:rgba(0,0,0,0.28);padding:8px 10px;border-radius:8px;}
-  #crosshair{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.9);font-size:22px;pointer-events:none;text-shadow:0 1px 0 #000;}
-  /* Doom-style HUD */
-  #doomHUD{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;width:920px;max-width:calc(100% - 28px);height:112px;background:linear-gradient(180deg,rgba(0,0,0,0.35),rgba(10,7,7,0.65));border-radius:6px;padding:10px;display:flex;gap:14px;align-items:stretch;box-shadow:0 10px 30px rgba(0,0,0,0.6);font-weight:800;}
-  #facePanel{width:160px;background:linear-gradient(180deg,#1a1513,#0f0d0c);border-radius:6px;display:flex;align-items:center;justify-content:center;padding:6px;}
-  canvas#face{width:128px;height:96px;image-rendering:pixelated;border-radius:4px;background:#2b2624;border:2px solid rgba(255,255,255,0.06);}
-  .bigHP{font-size:48px;color:var(--accent);font-family:monospace;}
-  .hpBarWrap{width:260px;height:18px;background:#0b0b0b;border-radius:6px;overflow:hidden;}
-  .hpBar{height:100%;width:100%;background:linear-gradient(90deg,#ff6b56,#ff2f1f);transition:width 0.12s linear;}
-  .statBox{width:220px;height:36px;background:#131212;border-radius:6px;display:flex;align-items:center;justify-content:space-between;padding:6px 10px;}
-  .statLabel{font-size:11px;opacity:0.8;}
-  .statValue{font-size:20px;font-family:monospace;color:var(--accent2);}
-  /* small screen */
-  @media (max-width:920px){
-    #doomHUD{height:96px;padding:8px;}
-    #facePanel{width:120px;}
-    .bigHP{font-size:38px;}
-    .hpBarWrap{width:180px;}
-    canvas#face{width:96px;height:72px;}
+  html, body { margin:0; padding:0; overflow:hidden; background:black; }
+  canvas { display:block; }
+  #hud {
+    position:absolute; bottom:0; left:0; width:100%; height:100px;
+    background:rgba(0,0,0,0.5); color:white; font-family:sans-serif;
+    display:flex; justify-content:space-around; align-items:center;
   }
-  #damageFlash{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;mix-blend-mode:screen;}
 </style>
 </head>
 <body>
-<canvas id="game" width=1024 height=640></canvas>
-<div id="minimap"><canvas id="map" width=160 height=160></canvas></div>
-<div id="help">WASD • Mouse look • Click / SPACE to fire • R restart</div>
-<div id="crosshair">+</div>
-
-<!-- HUD -->
-<div id="doomHUD" aria-hidden="true">
-  <div id="facePanel">
-    <canvas id="face" width=32 height=24></canvas>
-  </div>
-
-  <div style="flex:1;display:flex;gap:12px;align-items:center;">
-    <div style="display:flex;flex-direction:column;gap:6px;width:260px;">
-      <div style="font-size:12px;opacity:0.9;">HEALTH</div>
-      <div class="bigHP" id="hpBig">100</div>
-      <div class="hpBarWrap"><div id="hpBar" class="hpBar" style="width:100%"></div></div>
-    </div>
-
-    <div style="width:1px;height:76px;background:linear-gradient(180deg,#000,rgba(255,255,255,0.02));margin-left:12px;margin-right:12px;"></div>
-
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <div style="display:flex;gap:8px;">
-        <div style="width:110px;">
-          <div style="font-size:11px;opacity:0.8;">ARMOR</div>
-          <div class="statBox">
-            <div class="statLabel">ARM</div>
-            <div id="armorVal" class="statValue">0</div>
-          </div>
-        </div>
-        <div style="width:110px;">
-          <div style="font-size:11px;opacity:0.8;">KILLS</div>
-          <div class="statBox">
-            <div class="statLabel">KILL</div>
-            <div id="kills" class="statValue">0</div>
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:8px;">
-        <div style="width:110px;">
-          <div style="font-size:11px;opacity:0.8;">WEAPON</div>
-          <div class="statBox">
-            <div id="weaponName" class="statLabel">Pistol</div>
-            <div id="weaponIcon" class="statValue">●</div>
-          </div>
-        </div>
-        <div style="width:110px;">
-          <div style="font-size:11px;opacity:0.8;">AMMO</div>
-          <div class="statBox">
-            <div class="statLabel">AMMO</div>
-            <div id="ammoVal" class="statValue">50</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div style="width:240px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;"></div>
+<canvas id="game"></canvas>
+<div id="hud">
+  <div>Health: <span id="health">100</span></div>
+  <div>Ammo: <span id="ammo">50</span></div>
+  <div>Score: <span id="score">0</span></div>
 </div>
 
-<div id="damageFlash"></div>
-
 <script>
-/* ========= CORE & MAP ========= */
-const WIDTH = 1024, HEIGHT = 640;
-const FOV = Math.PI/3;
-const MAP = [
-  "################",
-  "#..............#",
-  "#..##...##.....#",
-  "#..##...##..#..#",
-  "#...........#..#",
-  "#..###..###...##",
-  "#..#...........#",
-  "#..#..##......#",
-  "#.....##..E...#",
-  "#..........##.#",
-  "#..E......##..#",
-  "#..............#",
-  "################"
+// Canvas setup
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Map setup (0 = empty, 1 = wall)
+const map = [
+  [1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,2,0,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,1],
+  [1,0,0,2,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1],
 ];
 
-/* ========= CANVASES & CTX ========= */
-const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
-canvas.width = WIDTH; canvas.height = HEIGHT; canvas.style.width = "100%"; canvas.style.height = "100vh";
-const mapCanvas = document.getElementById('map'), mctx = mapCanvas.getContext('2d');
-const faceCanvas = document.getElementById('face'), fctx = faceCanvas.getContext('2d');
-faceCanvas.style.imageRendering = 'pixelated';
+// Textures
+const wallTexture = new Image();
+wallTexture.src = 'https://i.imgur.com/9b8Zp8N.jpg'; // Brick texture
 
-ctx.imageSmoothingEnabled = false;
-mctx.imageSmoothingEnabled = false;
-fctx.imageSmoothingEnabled = false;
+const enemyTexture = new Image();
+enemyTexture.src = 'https://i.imgur.com/q1bHqfG.png'; // Red blob
 
-/* depth buffer */
-let depthBuffer = new Float32Array(WIDTH);
-
-/* ========= PLAYER & STATE ========= */
-let player = { x:2.5, y:2.5, dir:0, pitch:0, hp:100, armor:0, ammo:50 };
-let kills = 0;
-let damageFlash = 0;
-
-/* ========= INPUT ========= */
-const keys = {}; let mouseDown=false;
-window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-canvas.addEventListener('mousedown', e => { mouseDown=true; shoot(); canvas.requestPointerLock?.(); });
-window.addEventListener('mouseup', e => mouseDown=false);
-window.addEventListener('mousemove', e => {
-  if (document.pointerLockElement === canvas) {
-    player.dir += e.movementX * 0.0035;
-    player.pitch = Math.max(-0.65, Math.min(0.65, player.pitch + e.movementY * 0.003));
-  } else {
-    player.dir += e.movementX * 0.001;
-  }
-});
-window.addEventListener('keydown', e => { if (e.key === ' ') shoot(); });
-
-/* ========= MAP UTIL ========= */
-function mapGet(x,y){
-  if (y < 0 || y >= MAP.length || x < 0 || x >= MAP[0].length) return '#';
-  return MAP[y][x];
-}
-
-/* ========= TEXTURE GENERATION (procedural) ========= */
-const WALL_TEX_SIZE = 64;
-const wallTextures = []; // will hold canvases
-function makeBrickTexture(w=64,h=64){
-  const c = document.createElement('canvas'), cx = c.getContext('2d');
-  c.width=w; c.height=h;
-  // background mortar
-  cx.fillStyle = '#8a6f56'; cx.fillRect(0,0,w,h);
-  // bricks
-  const rows = 4, cols = 8;
-  const bw = w/cols, bh = h/rows;
-  for(let r=0;r<rows;r++){
-    for(let col=0;col<cols;col++){
-      const jitter = (Math.random()*0.08-0.04)*255;
-      const base = 140 + Math.floor(Math.random()*40) + (r*6);
-      const color = `rgb(${clamp(base + jitter,80,230)}, ${clamp(base-30 + jitter,60,200)}, ${clamp(base-40 + jitter,50,180)})`;
-      const x = Math.floor(col*bw + ((r%2)?bw*0.5:0)) % w;
-      const y = Math.floor(r*bh);
-      cx.fillStyle = color;
-      cx.fillRect(x+2, y+2, Math.ceil(bw)-4, Math.ceil(bh)-4);
-      // slight shadow at bottom
-      cx.fillStyle = 'rgba(0,0,0,0.12)';
-      cx.fillRect(x+2, y + Math.ceil(bh)-6, Math.ceil(bw)-4, 2);
-    }
-  }
-  // mortar lines
-  cx.strokeStyle = '#4b372b'; cx.lineWidth=2;
-  for(let r=0;r<=rows;r++){ cx.beginPath(); cx.moveTo(0, r*bh); cx.lineTo(w, r*bh); cx.stroke(); }
-  for(let c2=0;c2<=cols;c2++){ cx.beginPath(); cx.moveTo(c2*bw, 0); cx.lineTo(c2*bw, h); cx.stroke(); }
-  return c;
-}
-function makeStoneTexture(w=64,h=64){
-  const c = document.createElement('canvas'), cx = c.getContext('2d'); c.width=w; c.height=h;
-  // base
-  cx.fillStyle = '#6b6f72'; cx.fillRect(0,0,w,h);
-  // random blotches
-  for(let i=0;i<160;i++){
-    const rw = Math.random()*18+6, rh = Math.random()*6+4;
-    const x = Math.random()*(w-rw), y = Math.random()*(h-rh);
-    const shade = 90 + Math.floor(Math.random()*90);
-    cx.fillStyle = `rgb(${shade}, ${shade+8}, ${shade+15})`;
-    cx.beginPath(); cx.ellipse(x+rw/2,y+rh/2, rw/2, rh/2, Math.random()*Math.PI, 0, Math.PI*2); cx.fill();
-  }
-  // light/dark overlay
-  const g = cx.createLinearGradient(0,0,w,h); g.addColorStop(0,'rgba(255,255,255,0.02)'); g.addColorStop(1,'rgba(0,0,0,0.06)');
-  cx.fillStyle = g; cx.fillRect(0,0,w,h);
-  return c;
-}
-function makeMetalTexture(w=64,h=64){
-  const c = document.createElement('canvas'), cx = c.getContext('2d'); c.width=w; c.height=h;
-  cx.fillStyle = '#3a4852'; cx.fillRect(0,0,w,h);
-  // vertical stripes
-  for(let x=0;x<w;x++){
-    const val = 40 + Math.floor(Math.sin(x*0.4)*30 + (Math.random()*20-10));
-    cx.fillStyle = `rgba(${val+20},${val+26},${val+34},0.12)`; cx.fillRect(x,0,1,h);
-  }
-  // scratches
-  for(let i=0;i<12;i++){
-    cx.strokeStyle = 'rgba(255,255,255,0.06)';
-    cx.lineWidth = Math.random()*2+0.5;
-    cx.beginPath();
-    const y = Math.random()*h;
-    cx.moveTo(-10, y + Math.random()*8-4);
-    cx.quadraticCurveTo(w/2, y + (Math.random()*20-10), w+10, y + (Math.random()*8-4));
-    cx.stroke();
-  }
-  return c;
-}
-
-function generateWallTextures(){
-  wallTextures.length = 0;
-  wallTextures.push(makeBrickTexture(WALL_TEX_SIZE,WALL_TEX_SIZE));
-  wallTextures.push(makeStoneTexture(WALL_TEX_SIZE,WALL_TEX_SIZE));
-  wallTextures.push(makeMetalTexture(WALL_TEX_SIZE,WALL_TEX_SIZE));
-}
-generateWallTextures();
-
-/* ========= ENEMY SPRITES (procedural) ========= */
-const ENEMY_TEX_SIZE = 64;
-const enemyTextures = [];
-function makeEnemySprite(tint='#9fcf6f'){
-  const c = document.createElement('canvas'), cx = c.getContext('2d');
-  c.width = ENEMY_TEX_SIZE; c.height = ENEMY_TEX_SIZE;
-  // background transparent
-  cx.clearRect(0,0,c.width,c.height);
-  // body circle with radial gradient
-  const grad = cx.createRadialGradient(c.width*0.4, c.height*0.35, 4, c.width*0.4, c.height*0.35, c.width*0.8);
-  grad.addColorStop(0,'#ffffff');
-  grad.addColorStop(0.05, tint);
-  grad.addColorStop(1,'#222620');
-  cx.fillStyle = grad; cx.beginPath();
-  cx.ellipse(c.width/2, c.height/2.2, c.width*0.34, c.height*0.38, 0, 0, Math.PI*2); cx.fill();
-  // eyes
-  cx.fillStyle = '#080808'; cx.beginPath(); cx.ellipse(c.width*0.35, c.height*0.38, 6,6,0,0,Math.PI*2); cx.fill();
-  cx.fillStyle = '#080808'; cx.beginPath(); cx.ellipse(c.width*0.62, c.height*0.38, 6,6,0,0,Math.PI*2); cx.fill();
-  cx.fillStyle = '#fff'; cx.fillRect(c.width*0.34+3, c.height*0.38-2, 2,2);
-  cx.fillRect(c.width*0.61+3, c.height*0.38-2, 2,2);
-  // teeth / mouth
-  cx.fillStyle = '#d8d8d8'; cx.fillRect(c.width*0.4, c.height*0.6, 26, 8);
-  // scar / marks
-  cx.strokeStyle = 'rgba(0,0,0,0.18)'; cx.lineWidth=2;
-  cx.beginPath(); cx.moveTo(c.width*0.25, c.height*0.2); cx.lineTo(c.width*0.4, c.height*0.45); cx.stroke();
-  return c;
-}
-enemyTextures.push(makeEnemySprite('#c1ff9a'));
-enemyTextures.push(makeEnemySprite('#ffd76b'));
-enemyTextures.push(makeEnemySprite('#b0d8ff'));
-
-/* ========= ENTITIES ========= */
-class Enemy {
-  constructor(x,y){
-    this.x=x; this.y=y; this.hp=30; this.alive=true; this.lastHit=0; this.attackCooldown=0; this.rangedCooldown=0;
-    this.tex = enemyTextures[Math.floor(Math.random()*enemyTextures.length)];
-  }
-  update(dt){
-    if (!this.alive) return;
-    const dx = player.x - this.x, dy = player.y - this.y;
-    const dist = Math.hypot(dx,dy);
-    const los = hasLineOfSight(this.x, this.y, player.x, player.y);
-    if (los && dist > 0.9){
-      const nx = this.x + (dx/dist)*dt*1.2;
-      const ny = this.y + (dy/dist)*dt*1.2;
-      if (mapGet(Math.floor(nx), Math.floor(this.y)) === '.') this.x = nx;
-      if (mapGet(Math.floor(this.x), Math.floor(ny)) === '.') this.y = ny;
-    }
-    if (los){
-      this.attackCooldown -= dt;
-      if (dist <= 0.95 && this.attackCooldown <= 0){
-        this.attackCooldown = 0.85;
-        applyDamageToPlayer(12);
-      }
-      this.rangedCooldown -= dt;
-      if (dist > 1.2 && dist < 6.5 && this.rangedCooldown <= 0){
-        this.rangedCooldown = 1.0 + Math.random()*0.9;
-        spawnEnemyFireball(this.x, this.y, player.x, player.y);
-      }
-    }
-    if (this.hp <= 0 && this.alive){
-      this.alive = false; kills++; document.getElementById('kills').textContent = kills;
-    }
-    if (this.lastHit > 0) this.lastHit -= dt;
-  }
-}
-
-/* spawn enemies */
-const enemies = [];
-for (let y=0;y<MAP.length;y++){
-  for (let x=0;x<MAP[y].length;x++){
-    if (MAP[y][x] === 'E') enemies.push(new Enemy(x+0.5, y+0.5));
-  }
-}
-
-/* bullets / projectiles */
-const bullets = [], enemyProjectiles = [];
-function shoot(){
-  if (player.ammo <= 0) return;
-  player.ammo--; document.getElementById('ammoVal').textContent = player.ammo;
-  bullets.push({ x: player.x, y: player.y, dx: Math.cos(player.dir)*18, dy: Math.sin(player.dir)*18, life: 0.6 });
-}
-function spawnEnemyFireball(sx,sy,tx,ty){
-  const dx = tx - sx, dy = ty - sy, len = Math.hypot(dx,dy);
-  const speed = 7.2;
-  enemyProjectiles.push({ x: sx, y: sy, dx: dx/len*speed, dy: dy/len*speed, life: 3.0 });
-}
-
-/* ========= LOS & DAMAGE ========= */
-function hasLineOfSight(x0,y0,x1,y1){
-  const dx = x1 - x0, dy = y1 - y0;
-  const dist = Math.hypot(dx,dy);
-  const steps = Math.ceil(dist / 0.12);
-  for (let i=1;i<steps;i++){
-    const t = i/steps;
-    const ix = x0 + dx*t, iy = y0 + dy*t;
-    if (mapGet(Math.floor(ix), Math.floor(iy)) === '#') return false;
-  }
-  return true;
-}
-function applyDamageToPlayer(damage){
-  if (player.armor > 0){
-    const absorbed = Math.min(player.armor, Math.floor(damage * 0.6));
-    player.armor = Math.max(0, player.armor - absorbed);
-    const remaining = damage - absorbed;
-    player.hp = Math.max(0, player.hp - remaining);
-  } else {
-    player.hp = Math.max(0, player.hp - damage);
-  }
-  damageFlash = Math.max(damageFlash, 0.92);
-}
-
-/* ========= RAYCAST & RENDER ========= */
-function renderScene(dt){
-  ctx.fillStyle = '#0b0b0b'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  // sky/floor
-  const skyGrad = ctx.createLinearGradient(0,0,0,canvas.height/2);
-  skyGrad.addColorStop(0,'#2e6bff'); skyGrad.addColorStop(1,'#143');
-  ctx.fillStyle = skyGrad; ctx.fillRect(0,0,canvas.width,canvas.height/2);
-  ctx.fillStyle = '#3f3f3f'; ctx.fillRect(0,canvas.height/2,canvas.width,canvas.height/2);
-
-  const w = canvas.width;
-  for (let i=0;i<w;i++) depthBuffer[i] = Infinity;
-
-  for (let x=0;x<w;x++){
-    const cameraX = 2*(x/w)-1;
-    const rayDir = player.dir + cameraX * (FOV/2);
-    const rx = Math.cos(rayDir), ry = Math.sin(rayDir);
-    let mapX = Math.floor(player.x), mapY = Math.floor(player.y);
-    let sideDistX, sideDistY;
-    const deltaDistX = Math.abs(1 / rx), deltaDistY = Math.abs(1 / ry);
-    let stepX, stepY;
-    if (rx < 0){ stepX = -1; sideDistX = (player.x - mapX) * deltaDistX; }
-    else { stepX = 1; sideDistX = (mapX + 1.0 - player.x) * deltaDistX; }
-    if (ry < 0){ stepY = -1; sideDistY = (player.y - mapY) * deltaDistY; }
-    else { stepY = 1; sideDistY = (mapY + 1.0 - player.y) * deltaDistY; }
-
-    let hit=false, side=0;
-    for (let i=0;i<200;i++){
-      if (sideDistX < sideDistY){ sideDistX += deltaDistX; mapX += stepX; side=0; }
-      else { sideDistY += deltaDistY; mapY += stepY; side=1; }
-      if (mapGet(mapX,mapY) === '#'){ hit = true; break; }
-    }
-    if (!hit) continue;
-
-    let perpDist = side===0 ? (mapX - player.x + (1-stepX)/2) / rx : (mapY - player.y + (1-stepY)/2) / ry;
-    if (perpDist <= 0) continue;
-    depthBuffer[x] = perpDist;
-
-    const lineHeight = Math.floor(canvas.height / perpDist);
-    const drawStart = Math.max(0, Math.floor((-lineHeight/2) + canvas.height/2));
-    const drawEnd = Math.min(canvas.height-1, Math.floor((lineHeight/2) + canvas.height/2));
-
-    // texture sampling: compute exact hit position along the wall
-    let wallX;
-    if (side === 0) wallX = player.y + perpDist * ry;
-    else wallX = player.x + perpDist * rx;
-    wallX -= Math.floor(wallX);
-
-    const texIdx = (mapX + mapY) % wallTextures.length;
-    const tex = wallTextures[texIdx];
-    const texW = tex.width, texH = tex.height;
-    const texX = Math.floor(wallX * texW) % texW;
-
-    // draw the 1-px texture column scaled to vertical slice
-    // crop 1px column from texture and stretch vertically
-    try {
-      ctx.drawImage(tex, texX, 0, 1, texH, x, drawStart, 1, drawEnd-drawStart+1);
-    } catch(e){
-      // fallback: solid fill if something odd
-      ctx.fillStyle = '#7a4123';
-      ctx.fillRect(x, drawStart, 1, drawEnd-drawStart+1);
-    }
-
-    // shading based on distance & side
-    const shade = Math.max(0.12, 1 - Math.min(1, perpDist/11));
-    ctx.fillStyle = `rgba(0,0,0,${1 - shade})`;
-    if (side) ctx.fillStyle = `rgba(0,0,0,${(1-shade)*0.9})`;
-    ctx.fillRect(x, drawStart, 1, drawEnd-drawStart+1);
-  }
-
-  /* ======= SPRITES (textured enemies) ======= */
-  enemies.forEach(enemy => {
-    if (!enemy.alive) return;
-    const dx = enemy.x - player.x, dy = enemy.y - player.y;
-    const angTo = Math.atan2(dy,dx);
-    const rel = normalizeAngle(angTo - player.dir);
-    const dist = Math.hypot(dx,dy);
-    // must be within FOV and not fully behind wall (occlusion)
-    if (Math.abs(rel) < FOV/2 && dist > 0.35 && hasLineOfSight(enemy.x, enemy.y, player.x, player.y)){
-      const screenX = Math.tan(rel) / Math.tan(FOV/2) * (canvas.width/2) + (canvas.width/2);
-      const size = Math.max(10, Math.floor(canvas.height / dist) * 0.85);
-      const sy = Math.floor(canvas.height/2 - size/2 - player.pitch*200);
-      const leftCol = Math.max(0, Math.floor(screenX - size/2));
-      const rightCol = Math.min(canvas.width-1, Math.ceil(screenX + size/2));
-      // find visible horizontal range using depthBuffer
-      let visStart=-1, visEnd=-1;
-      for (let c=leftCol;c<=rightCol;c++){
-        if (depthBuffer[c] > dist - 0.28){ visStart = c; break; }
-      }
-      if (visStart >= 0){
-        visEnd = visStart;
-        while (visEnd+1 <= rightCol && depthBuffer[visEnd+1] > dist - 0.28) visEnd++;
-        // clip to visible columns and draw sprite
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(visStart, 0, visEnd - visStart + 1, canvas.height);
-        ctx.clip();
-        // draw textured sprite centered at screenX
-        const tex = enemy.tex;
-        const tw = tex.width, th = tex.height;
-        // scale sprite to 'size'
-        ctx.drawImage(tex, 0, 0, tw, th, Math.floor(screenX - size/2), sy, size, size);
-        // optionally tint when hit
-        if (enemy.lastHit > 0){
-          ctx.fillStyle = `rgba(255,220,100,${Math.min(0.6, enemy.lastHit*2)})`;
-          ctx.fillRect(Math.floor(screenX - size/2), sy, size, size);
-        }
-        // health bar
-        ctx.fillStyle = '#000'; ctx.fillRect(screenX - size/2, sy - 8, size, 6);
-        ctx.fillStyle = '#f44'; ctx.fillRect(screenX - size/2, sy - 8, size * Math.max(0, enemy.hp/30), 6);
-        ctx.restore();
-        // update depth buffer so sprites occlude others behind them
-        for (let c = visStart; c <= visEnd; c++) depthBuffer[c] = Math.min(depthBuffer[c], dist);
-      }
-    }
-  });
-
-  /* ===== bullets visible markers ===== */
-  bullets.forEach(b => {
-    const px = b.x - player.x, py = b.y - player.y;
-    const ang = Math.atan2(py, px), rel = normalizeAngle(ang - player.dir);
-    const dist = Math.hypot(px, py);
-    if (Math.abs(rel) < FOV/2 && dist > 0.1){
-      const sx = Math.tan(rel) / Math.tan(FOV/2) * (canvas.width/2) + (canvas.width/2);
-      ctx.fillStyle = '#ffebc7'; ctx.fillRect(sx-1, canvas.height/2-1, 2, 2);
-    }
-  });
-
-  /* enemy projectiles */
-  enemyProjectiles.forEach(p => {
-    const px = p.x - player.x, py = p.y - player.y;
-    const ang = Math.atan2(py, px), rel = normalizeAngle(ang - player.dir);
-    const dist = Math.hypot(px, py);
-    if (Math.abs(rel) < FOV/2 && dist > 0.1){
-      const sx = Math.tan(rel) / Math.tan(FOV/2) * (canvas.width/2) + (canvas.width/2);
-      ctx.beginPath(); ctx.fillStyle = '#ff8a33'; ctx.arc(sx, canvas.height/2, 4, 0, Math.PI*2); ctx.fill();
-    }
-  });
-
-  /* damage flash */
-  if (damageFlash > 0){
-    ctx.fillStyle = `rgba(255,48,48,${Math.min(0.7, damageFlash * 0.7)})`;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-  }
-}
-
-/* ========= HELPERS & UTIL ========= */
-function normalizeAngle(a){ while (a > Math.PI) a -= Math.PI*2; while (a < -Math.PI) a += Math.PI*2; return a; }
-function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
-function shadeColor(hex, factor){
-  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  const nr = Math.floor(r*factor), ng = Math.floor(g*factor), nb = Math.floor(b*factor);
-  return `rgb(${nr},${ng},${nb})`;
-}
-
-/* ========= GAME LOOP / UPDATE ========= */
-let last = performance.now();
-function loop(now){
-  const dt = Math.min(0.05, (now - last)/1000);
-  last = now;
-  update(dt);
-  renderScene(dt);
-  drawMinimap();
-  drawFacePortrait();
-  updateHUD();
-  damageFlash = Math.max(0, damageFlash - dt*1.6);
-  enemies.forEach(e => { if (e.lastHit > 0) e.lastHit -= dt; });
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
-
-function update(dt){
-  // movement
-  const moveSpeed = 3.4;
-  let dx=0, dy=0;
-  if (keys['w']){ dx += Math.cos(player.dir)*moveSpeed*dt; dy += Math.sin(player.dir)*moveSpeed*dt; }
-  if (keys['s']){ dx -= Math.cos(player.dir)*moveSpeed*dt; dy -= Math.sin(player.dir)*moveSpeed*dt; }
-  if (keys['a']){ dx += Math.cos(player.dir - Math.PI/2)*moveSpeed*dt; dy += Math.sin(player.dir - Math.PI/2)*moveSpeed*dt; }
-  if (keys['d']){ dx += Math.cos(player.dir + Math.PI/2)*moveSpeed*dt; dy += Math.sin(player.dir + Math.PI/2)*moveSpeed*dt; }
-  tryMove(player.x + dx, player.y + dy);
-
-  if (keys['r']) restart();
-
-  enemies.forEach(e => e.update(dt));
-
-  // bullets
-  for (let i = bullets.length - 1; i >= 0; i--){
-    const b = bullets[i];
-    b.life -= dt;
-    if (b.life <= 0){ bullets.splice(i,1); continue; }
-    b.x += b.dx * dt; b.y += b.dy * dt;
-    if (mapGet(Math.floor(b.x), Math.floor(b.y)) === '#'){ bullets.splice(i,1); continue; }
-    for (let j=0;j<enemies.length;j++){
-      const en = enemies[j];
-      if (!en.alive) continue;
-      const dd = Math.hypot(en.x - b.x, en.y - b.y);
-      if (dd < 0.6){ en.hp -= 16; en.lastHit = 0.18; bullets.splice(i,1); break; }
-    }
-  }
-
-  // ======= PROJECTILES =======
-class Projectile {
-  constructor(x, y, dx, dy, speed=0.08, damage=5){
-    this.x = x; this.y = y;
-    this.dx = dx; this.dy = dy;
-    this.speed = speed;
-    this.damage = damage;
-    this.size = 0.15;
-  }
-  update(){
-    this.x += this.dx*this.speed;
-    this.y += this.dy*this.speed;
-    // Collision with player
-    let pdx = this.x - player.x;
-    let pdy = this.y - player.y;
-    let dist = Math.sqrt(pdx*pdx + pdy*pdy);
-    if(dist < 0.4){
-      player.hp -= this.damage;
-      damageFlash = 0.4;
-      return false; // remove projectile
-    }
-    // Collision with walls
-    if(mapGet(Math.floor(this.x), Math.floor(this.y)) === '#') return false;
-    return true;
-  }
-  draw(){
-    const sx = (this.x - player.x)*64 + WIDTH/2;
-    const sy = (this.y - player.y)*64 + HEIGHT/2;
-    ctx.fillStyle = "#ff6600";
-    ctx.beginPath();
-    ctx.arc(sx, sy, this.size*64, 0, Math.PI*2);
-    ctx.fill();
-  }
-}
-
-let projectiles = [];
-
-// ======= CACODEMON ATTACK LOGIC =======
-Enemy.prototype.attackTimer = 0;
-const FIRE_INTERVAL = 180; // frames (~3 seconds)
-const FIRE_RANGE = 5;
-
-Enemy.prototype.update = function(){
-  let dx = player.x - this.x, dy = player.y - this.y;
-  let dist = Math.sqrt(dx*dx + dy*dy);
-  // move toward player if close
-  if(dist>0.6){ this.x += (dx/dist)*this.speed; this.y += (dy/dist)*this.speed; }
-  // melee damage
-  if(dist < 0.6){ player.hp -= 0.3; damageFlash=0.4; }
-  // fireball attack
-  this.attackTimer++;
-  if(this.attackTimer >= FIRE_INTERVAL && dist < FIRE_RANGE){
-    let norm = Math.sqrt(dx*dx + dy*dy);
-    projectiles.push(new Projectile(this.x, this.y, dx/norm, dy/norm));
-    this.attackTimer = 0;
-  }
+// Player setup
+const player = {
+  x: 3.5,
+  y: 3.5,
+  angle: 0,
+  fov: Math.PI/3,
+  speed: 0.05
 };
 
-// ======= PROJECTILES UPDATE & DRAW =======
-function updateProjectiles(){
-  for(let i = projectiles.length-1; i>=0; i--){
-    if(!projectiles[i].update()) projectiles.splice(i,1);
-  }
-}
+// Enemies
+let enemies = [
+  {x:7.5, y:2.5, health:50},
+  {x:3.5, y:6.5, health:50}
+];
 
-function drawProjectiles(){
-  projectiles.forEach(p => p.draw());
-}
+// Key input
+const keys = {};
+document.addEventListener('keydown', e=>keys[e.key]=true);
+document.addEventListener('keyup', e=>keys[e.key]=false);
 
-// ======= IN GAME LOOP =======
-function gameLoop(){
-  ctx.clearRect(0,0,WIDTH,HEIGHT);
-  ctx.fillStyle="#333"; ctx.fillRect(0,HEIGHT/2,WIDTH,HEIGHT/2);
+// Raycasting function
+function castRays() {
+  const numRays = canvas.width;
+  const stripWidth = canvas.width / numRays;
+  for(let i=0;i<numRays;i++){
+    const rayAngle = (player.angle - player.fov/2) + (i/numRays)*player.fov;
+    let distance = 0;
+    let hit = false;
+    let hitX, hitY, textureX;
+    let stepSize = 0.01;
+    
+    while(!hit && distance<20){
+      distance += stepSize;
+      const testX = Math.floor(player.x + Math.cos(rayAngle)*distance);
+      const testY = Math.floor(player.y + Math.sin(rayAngle)*distance);
+      if(map[testY] && map[testY][testX] > 0){
+        hit = true;
+        hitX = testX;
+        hitY = testY;
+        textureX = (player.x + Math.cos(rayAngle)*distance) % 1;
+      }
+    }
 
-  // Draw walls
-  for(let y=0;y<MAP.length;y++) for(let x=0;x<MAP[0].length;x++){
-    if(MAP[y][x]=='#'){
-      const sx=(x-player.x)*64+WIDTH/2, sy=(y-player.y)*64+HEIGHT/2;
-      ctx.drawImage(wallTextures[0], sx, sy, 64, 64);
+    if(hit){
+      const wallHeight = (canvas.height / distance) * 0.8;
+      ctx.drawImage(
+        wallTexture,
+        textureX*wallTexture.width, 0, 1, wallTexture.height,
+        i*stripWidth, canvas.height/2 - wallHeight/2, stripWidth, wallHeight
+      );
     }
   }
+}
 
-  // Update & draw enemies
-  enemies.forEach(e=>{ e.update(); e.draw(); });
+// Draw enemies
+function drawEnemies() {
+  enemies.forEach(enemy=>{
+    const dx = enemy.x - player.x;
+    const dy = enemy.y - player.y;
+    const distance = Math.sqrt(dx*dx + dy*dy);
+    const angleToEnemy = Math.atan2(dy, dx) - player.angle;
+    if(Math.abs(angleToEnemy) < player.fov/2){
+      const size = (canvas.height / distance) * 0.8;
+      const screenX = (0.5 + (angleToEnemy/player.fov)) * canvas.width - size/2;
+      ctx.drawImage(enemyTexture, screenX, canvas.height/2 - size/2, size, size);
+    }
+  });
+}
 
-  // Update & draw projectiles
-  updateProjectiles();
-  drawProjectiles();
+// Game loop
+function gameLoop(){
+  // Movement
+  if(keys['w']) player.x += Math.cos(player.angle)*player.speed;
+  if(keys['s']) player.x -= Math.cos(player.angle)*player.speed;
+  if(keys['w']) player.y += Math.sin(player.angle)*player.speed;
+  if(keys['s']) player.y -= Math.sin(player.angle)*player.speed;
+  if(keys['a']) player.angle -= 0.03;
+  if(keys['d']) player.angle += 0.03;
 
-  // Damage flash
-  if(damageFlash>0){ document.getElementById('damageFlash').style.background=`rgba(255,0,0,${damageFlash})`; damageFlash-=0.02; }
-  else document.getElementById('damageFlash').style.background='';
+  // Clear
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  updateHUD();
+  // Draw 3D
+  castRays();
+  drawEnemies();
+
   requestAnimationFrame(gameLoop);
 }
-gameLoop();
-/* collision helpers */
-function tryMove(nx, ny){
-  const pad = 0.15;
-  if (mapGet(Math.floor(nx - pad), Math.floor(player.y - pad)) === '.' &&
-      mapGet(Math.floor(nx + pad), Math.floor(player.y + pad)) === '.' &&
-      mapGet(Math.floor(nx - pad), Math.floor(player.y + pad)) === '.' &&
-      mapGet(Math.floor(nx + pad), Math.floor(player.y - pad)) === '.'){
-        player.x = nx; player.y = ny;
-  } else {
-    if (mapGet(Math.floor(nx), Math.floor(player.y)) === '.') player.x = nx;
-    if (mapGet(Math.floor(player.x), Math.floor(ny)) === '.') player.y = ny;
-  }
-}
 
-/* restart */
-function restart(){
-  player.x = 2.5; player.y = 2.5; player.dir = 0; player.hp = 100; player.armor = 0; player.ammo = 50;
-  bullets.length = 0; enemyProjectiles.length = 0;
-  kills = 0; document.getElementById('kills').textContent = 0; document.getElementById('ammoVal').textContent = player.ammo;
-  // respawn enemies to random open spots
-  enemies.forEach(e => {
-    e.x = Math.floor(Math.random()*(MAP[0].length-6))+3 + 0.5;
-    e.y = Math.floor(Math.random()*(MAP.length-6))+3 + 0.5;
-    e.hp=30; e.alive=true; e.lastHit=0; e.attackCooldown=0; e.rangedCooldown=0;
-    e.tex = enemyTextures[Math.floor(Math.random()*enemyTextures.length)];
-  });
-}
-
-/* ========= MINIMAP ========= */
-function drawMinimap(){
-  const cols = MAP[0].length, rows = MAP.length;
-  const cw = mapCanvas.width, ch = mapCanvas.height;
-  mctx.fillStyle = 'rgba(0,0,0,0.22)'; mctx.fillRect(0,0,cw,ch);
-  const cellW = cw/cols, cellH = ch/rows;
-  for (let y=0;y<rows;y++){
-    for (let x=0;x<cols;x++){
-      const c = mapGet(x,y) === '#' ? '#666' : '#0d0d0d';
-      mctx.fillStyle = c; mctx.fillRect(x*cellW, y*cellH, cellW, cellH);
-    }
-  }
-  enemies.forEach(e => {
-    if (!e.alive) return;
-    const dx = e.x - player.x, dy = e.y - player.y;
-    if (Math.hypot(dx,dy) < 9) { mctx.fillStyle = '#c33'; mctx.beginPath(); mctx.arc(e.x*cellW, e.y*cellH, 3, 0, Math.PI*2); mctx.fill(); }
-  });
-  mctx.fillStyle = '#ffcc33'; mctx.beginPath(); mctx.arc(player.x*cellW, player.y*cellH, 4, 0, Math.PI*2); mctx.fill();
-  mctx.strokeStyle = '#ffcc33'; mctx.beginPath(); mctx.moveTo(player.x*cellW, player.y*cellH); mctx.lineTo((player.x + Math.cos(player.dir)*0.9)*cellW, (player.y + Math.sin(player.dir)*0.9)*cellH); mctx.stroke();
-}
-
-/* ========= FACE PORTRAIT (pixel art) ========= */
-function drawFacePortrait(){
-  const W = faceCanvas.width, H = faceCanvas.height;
-  fctx.clearRect(0,0,W,H);
-  fctx.fillStyle = '#161210'; fctx.fillRect(0,0,W,H);
-  const skin = '#d8b38b', eye = '#0e1115', hair = '#2f2320', wound = '#b31a1a';
-  const p = (x,y,color) => { fctx.fillStyle=color; fctx.fillRect(x,y,1,1); };
-  for (let x=6;x<26;x++) p(x,2,hair);
-  for (let x=4;x<28;x++) p(x,3,hair);
-  for (let y=5;y<20;y++){ for (let x=6;x<26;x++) p(x,y,skin); }
-  p(10,10,eye); p(11,10,'#fff'); p(20,10,eye); p(21,10,'#fff');
-  if (player.hp > 75){ p(12,14,'#6b2'); p(13,15,'#6b2'); p(19,15,'#6b2'); p(18,14,'#6b2'); }
-  else if (player.hp > 50){ p(13,15,'#412a20'); p(14,15,'#412a20'); p(15,15,'#412a20'); p(16,15,'#412a20'); }
-  else if (player.hp > 25){ p(12,14,'#7b2'); p(13,13,'#7b2'); p(14,13,'#7b2'); p(18,13,'#7b2'); p(19,13,'#7b2'); p(20,14,'#7b2'); }
-  else if (player.hp > 0){ p(12,13,wound); p(13,13,wound); p(14,13,wound); p(18,13,wound); p(19,13,wound); p(11,10,'#783'); p(21,10,'#783'); }
-  else { for (let x=10;x<=21;x++) p(x,11,'#2a2a2a'); p(14,14,'#7b2'); p(15,14,'#7b2'); }
-}
-
-/* ========= HUD UPDATE ========= */
-function updateHUD(){
-  document.getElementById('hpBig').textContent = Math.max(0, Math.round(player.hp));
-  document.getElementById('hpBar').style.width = Math.max(0, Math.min(100,(player.hp/100*100))) + '%';
-  document.getElementById('armorVal').textContent = player.armor;
-  document.getElementById('ammoVal').textContent = player.ammo;
-  document.getElementById('weaponName').textContent = 'Pistol';
-  document.getElementById('damageFlash').style.background = damageFlash > 0 ? `radial-gradient(circle at 50% 30%, rgba(255,100,100,${damageFlash*0.45}), rgba(0,0,0,0))` : 'transparent';
-}
-
-/* ========= START POINTER LOCK ========= */
-canvas.addEventListener('click', ()=> canvas.requestPointerLock?.());
-
+wallTexture.onload = () => enemyTexture.onload = () => gameLoop();
 </script>
 </body>
 </html>
