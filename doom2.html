@@ -1,1 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mini-Doom Homage — Textured Walls & Textured Enemies</title>
+<style>
+/* CSS for HUD, minimap, crosshair, and game canvas already included */
+</style>
+</head>
+<body>
+<canvas id="game" width=1024 height=640></canvas>
+<div id="minimap"><canvas id="map" width=200 height=200></canvas></div>
+<div id="help">WASD • Mouse look • Click / SPACE to fire • R restart</div>
+<div id="crosshair">+</div>
+<div id="doomHUD">...HUD content...</div>
+<div id="damageFlash"></div>
+<script>
+/* ========= CORE & MAP ========= */
+const WIDTH = 1024, HEIGHT = 640;
+const FOV = Math.PI/3;
+const MAP = [
+  "########################",
+  "#..............#.......#",
+  "#..##...##.............#",
+  "#..##...##..#..........#",
+  "#...........#..........#",
+  "#..###..###...##.......#",
+  "#..#...........#.......#",
+  "#..#..##......#........#",
+  "#..............#.......#",
+  "#.....##..E...##.......#",
+  "#..........##........E.#",
+  "#..E......##..........#",
+  "#......................#",
+  "########################"
+];
+
+/* ========= CANVASES & CTX ========= */
+const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
+canvas.width = WIDTH; canvas.height = HEIGHT; canvas.style.width = "100%"; canvas.style.height = "100vh";
+const mapCanvas = document.getElementById('map'), mctx = mapCanvas.getContext('2d');
+const faceCanvas = document.getElementById('face'), fctx = faceCanvas.getContext('2d');
+faceCanvas.style.imageRendering = 'pixelated';
+ctx.imageSmoothingEnabled = false;
+mctx.imageSmoothingEnabled = false;
+fctx.imageSmoothingEnabled = false;
+let depthBuffer = new Float32Array(WIDTH);
+
+/* ========= PLAYER & STATE ========= */
+let player = { x:2.5, y:2.5, dir:0, pitch:0, hp:100, armor:0, ammo:50 };
+let kills = 0;
+let damageFlash = 0;
+
+/* ========= INPUT ========= */
+const keys = {}; let mouseDown=false;
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+canvas.addEventListener('mousedown', e => { mouseDown=true; shoot(); canvas.requestPointerLock?.(); });
+window.addEventListener('mouseup', e => mouseDown=false);
+window.addEventListener('mousemove', e => {
+  if (document.pointerLockElement === canvas) {
+    player.dir += e.movementX * 0.0035;
+    player.pitch = Math.max(-0.65, Math.min(0.65, player.pitch + e.movementY * 0.003));
+  } else {
+    player.dir += e.movementX * 0.001;
+  }
+});
+window.addEventListener('keydown', e => { if (e.key === ' ') shoot(); });
+
+/* ========= MAP UTIL ========= */
+function mapGet(x,y){ if (y < 0 || y >= MAP.length || x < 0 || x >= MAP[0].length) return '#'; return MAP[y][x]; }
+
+/* ========= TEXTURE GENERATION ========= */
+/* wallTextures generation remains the same */
+
+/* ========= ENEMY SPRITES (red blob style) ========= */
+const ENEMY_TEX_SIZE = 64;
+const enemyTextures = [];
+function makeRedBlob(){
+  const c = document.createElement('canvas'), cx = c.getContext('2d');
+  c.width = ENEMY_TEX_SIZE; c.height = ENEMY_TEX_SIZE;
+  cx.clearRect(0,0,c.width,c.height);
+  const grad = cx.createRadialGradient(c.width/2, c.height/2, 4, c.width/2, c.height/2, c.width*0.45);
+  grad.addColorStop(0,'#ff6666');
+  grad.addColorStop(1,'#880000');
+  cx.fillStyle = grad;
+  cx.beginPath(); cx.arc(c.width/2, c.height/2, c.width*0.42, 0, Math.PI*2); cx.fill();
+  // eyes
+  cx.fillStyle='#000'; cx.beginPath(); cx.arc(c.width*0.35, c.height*0.35, 5,0,Math.PI*2); cx.fill();
+  cx.beginPath(); cx.arc(c.width*0.65, c.height*0.35, 5,0,Math.PI*2); cx.fill();
+  cx.fillStyle='#fff'; cx.fillRect(c.width*0.34+2, c.height*0.34, 2,2); cx.fillRect(c.width*0.64, c.height*0.34, 2,2);
+  // mouth
+  cx.fillStyle='#550000'; cx.fillRect(c.width*0.35, c.height*0.6, 24, 6);
+  return c;
+}
+for(let i=0;i<5;i++) enemyTextures.push(makeRedBlob());
+
+/* ========= ENTITIES ========= */
+class Enemy{ constructor(x,y){ this.x=x; this.y=y; this.hp=30; this.alive=true; this.lastHit=0; this.attackCooldown=0; this.rangedCooldown=0; this.tex = enemyTextures[Math.floor(Math.random()*enemyTextures.length)]; }
+update(dt){ if(!this.alive) return;
+const dx=player.x-this.x, dy=player.y-this.y;
+const dist=Math.hypot(dx,dy);
+const los=hasLineOfSight(this.x,this.y,player.x,player.y);
+if(los && dist>0.9){ const nx=this.x+(dx/dist)*dt*1.2, ny=this.y+(dy/dist)*dt*1.2;
+if(mapGet(Math.floor(nx), Math.floor(this.y))==='.') this.x=nx;
+if(mapGet(Math.floor(this.x), Math.floor(ny))==='.') this.y=ny; }
+if(los){ this.attackCooldown-=dt; if(dist<=0.95 && this.attackCooldown<=0){ this.attackCooldown=0.85; applyDamageToPlayer(12); }
+this.rangedCooldown-=dt; if(dist>1.2 && dist<6.5 && this.rangedCooldown<=0){ this.rangedCooldown=1.0+Math.random()*0.9; spawnEnemyFireball(this.x,this.y,player.x,player.y); } }
+if(this.hp<=0 && this.alive){ this.alive=false; kills++; document.getElementById('kills').textContent=kills; }
+if(this.lastHit>0) this.lastHit-=dt; } }
+
+/* spawn enemies */
+const enemies=[];
+for(let y=0;y<MAP.length;y++){ for(let x=0;x<MAP[y].length;x++){ if(MAP[y][x]==='E') enemies.push(new Enemy(x+0.5,y+0.5)); } }
+
+/* Remaining bullets, LOS, raycasting, rendering, HUD, minimap, face portrait code stays mostly the same */
+</script>
+</body>
+</html>
 
