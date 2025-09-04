@@ -2,279 +2,224 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>On‑Device Image Classifier</title>
-  <meta name="description" content="Drop or upload an image to identify what's in it using a TensorFlow.js MobileNet model. Runs 100% in your browser—no uploads." />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Google Images Link Builder</title>
   <style>
-    :root{
-      --bg: #0b1220;
-      --card: #0f172a;
-      --muted: #94a3b8;
-      --text: #e5e7eb;
-      --accent: #60a5fa;
-      --ring: rgba(96,165,250,.45);
-      --ok: #34d399;
-      --warn: #fbbf24;
-      --error: #f87171;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji";
-      color:var(--text);
-      background: radial-gradient(1200px 600px at 10% -10%, rgba(96,165,250,.12), transparent 60%),
-                  radial-gradient(900px 500px at 110% 10%, rgba(34,197,94,.10), transparent 60%),
-                  var(--bg);
-    }
-    .container{max-width:1100px;margin:0 auto;padding:28px}
-    header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px}
-    .title{display:flex;gap:12px;align-items:center}
-    .logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#60a5fa,#34d399);display:grid;place-items:center;box-shadow:0 10px 30px rgba(96,165,250,.3)}
-    .logo span{font-weight:700}
-    h1{font-size:clamp(20px,3vw,28px);margin:0}
-    .sub{color:var(--muted);font-size:14px}
-
-    .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .chip{padding:8px 10px;border-radius:999px;background:color-mix(in srgb, var(--accent) 18%, transparent); border:1px solid rgba(96,165,250,.35); color:#cfe6ff; font-size:12px; display:flex; gap:6px; align-items:center}
-
-    .drop{
-      position:relative;
-      border:1.5px dashed rgba(148,163,184,.45);
-      border-radius:18px; padding:28px; background:rgba(15,23,42,.6);
-      display:grid; place-items:center; text-align:center; margin:18px 0;
-      transition:.2s border-color, .2s box-shadow, .2s background;
-    }
-    .drop.dragover{border-color:var(--accent); box-shadow:0 0 0 6px var(--ring); background:rgba(15,23,42,.8)}
-    .drop button{appearance:none;border:0; background:linear-gradient(135deg,#60a5fa,#34d399); color:#0b1220; padding:10px 14px; font-weight:700; border-radius:12px; cursor:pointer; box-shadow:0 10px 30px rgba(96,165,250,.3)}
-    .drop p{margin:8px 0 0 0; color:var(--muted); font-size:13px}
-
-    .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0 2px}
-    .btn{appearance:none;border:1px solid rgba(148,163,184,.35); background:rgba(15,23,42,.6); color:var(--text); padding:8px 12px; border-radius:12px; cursor:pointer}
-    .btn:hover{border-color:#94a3b8}
-
-    .status{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .status .pill{display:flex;gap:8px;align-items:center; font-size:13px; padding:8px 10px; border-radius:999px; background:rgba(148,163,184,.1); border:1px solid rgba(148,163,184,.25)}
-    .hidden{display:none}
-
-    .spinner{width:14px;height:14px;border:2px solid rgba(148,163,184,.35); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px; margin-top:18px}
-    .card{background:rgba(15,23,42,.7); border:1px solid rgba(148,163,184,.25); border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .thumb{aspect-ratio:1/1; width:100%; object-fit:cover; background:#0b1220}
-    .card .body{padding:12px}
-    .name{font-size:13px;color:var(--muted);margin:0 0 8px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-
-    .pred{display:flex;justify-content:space-between;align-items:center;gap:8px; font-size:14px; padding:8px 10px; border-radius:10px; border:1px solid rgba(148,163,184,.2); background:rgba(148,163,184,.08); margin:6px 0}
-    .pred.best{border-color:rgba(52,211,153,.45); background:rgba(52,211,153,.12)}
-    .conf{font-variant-numeric:tabular-nums; opacity:.9}
-
-    footer{margin:28px 0 8px;color:var(--muted);font-size:12px}
-    a{color:#a5d8ff}
-    .warn{color:var(--warn)}
-    .error{color:var(--error)}
+    :root{--bg:#0f1720;--card:#0b1220;--accent:#0ea5a4;--muted:#94a3b8;color-scheme:dark}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;min-height:100vh;background:linear-gradient(180deg,#071021 0%, #0b1320 100%);display:flex;align-items:center;justify-content:center;padding:24px;margin:0;color:#e6eef6}
+    .card{max-width:820px;width:100%;background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;box-shadow:0 6px 30px rgba(2,6,23,0.6)}
+    h1{margin:0 0 8px 0;font-size:20px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    input[type="text"],select{background:#071426;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;color:inherit;min-width:0}
+    .col{flex:1 1 200px;min-width:160px}
+    .actions{display:flex;gap:8px;margin-top:14px}
+    button{background:linear-gradient(90deg,var(--accent),#38bdf8);border:none;padding:10px 14px;border-radius:10px;color:#042026;font-weight:600;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .url{margin-top:14px;background:rgba(0,0,0,0.25);padding:10px;border-radius:8px;font-size:13px;word-break:break-all}
+    .note{font-size:12px;color:var(--muted);margin-top:8px}
+    footer{margin-top:12px;font-size:12px;color:var(--muted)}
   </style>
-  <!-- TensorFlow.js + MobileNet (runs locally in your browser) -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="title">
-        <div class="logo" aria-hidden="true"><span>🔎</span></div>
-        <div>
-          <h1>On‑Device Image Classifier</h1>
-          <div class="sub">Upload or paste images; get top labels like <em>"tabby cat"</em> or <em>"Granny Smith apple"</em>. Nothing leaves your browser.</div>
-        </div>
-      </div>
-      <div class="bar">
-        <span class="chip" title="Model">🤖 MobileNet v2</span>
-        <span class="chip" title="Privacy">🔐 On‑device</span>
-        <span class="chip" title="Paste support">📋 Paste images (Cmd/Ctrl‑V)</span>
-      </div>
-    </header>
+  <div class="card" role="main" aria-labelledby="title">
+    <h1 id="title">Google Images URL builder</h1>
+    <p class="note">Type a query, choose filters, then open Google Images or copy the generated link.</p>
 
-    <section>
-      <div id="drop" class="drop" role="button" tabindex="0" aria-label="Upload images area">
-        <div>
-          <h2 style="margin:0 0 10px 0; font-size:18px">Drop images here</h2>
-          <button id="pickBtn" type="button">Browse files</button>
-          <p>PNG • JPG • GIF • HEIC (device support varies)</p>
-        </div>
-        <input id="fileInput" type="file" accept="image/*" multiple hidden />
+    <div class="row">
+      <div class="col">
+        <label for="query">Search query</label>
+        <input id="query" type="text" placeholder="e.g. golden retriever puppy" value="golden retriever puppy" />
       </div>
-      <div class="actions">
-        <button id="clearBtn" class="btn" type="button">Clear all</button>
-        <span class="status">
-          <span id="loadingPill" class="pill"><span class="spinner" aria-hidden="true"></span> Loading model…</span>
-          <span id="readyPill" class="pill hidden" style="color:var(--ok)">✅ Ready</span>
-          <span id="errorPill" class="pill hidden error">⚠️ Model failed to load</span>
-        </span>
+
+      <div class="col">
+        <label for="site">Limit to site (optional)</label>
+        <input id="site" type="text" placeholder="example.com or leave blank" />
       </div>
-    </section>
 
-    <section id="gallery" class="grid" aria-live="polite"></section>
+      <div class="col">
+        <label for="safesearch">SafeSearch</label>
+        <select id="safesearch">
+          <option value="active">On (safe)</option>
+          <option value="off">Off</option>
+        </select>
+      </div>
+    </div>
 
-    <footer>
-      Tip: This is a general‑purpose classifier. For safety‑critical or professional use, don’t rely on it alone. You can swap in a custom model later if you need domain‑specific labels.
-    </footer>
+    <div class="row">
+      <div class="col">
+        <label for="size">Image size</label>
+        <select id="size">
+          <option value="">Any</option>
+          <option value="isz:l">Large</option>
+          <option value="isz:m">Medium</option>
+          <option value="isz:i">Icon</option>
+        </select>
+      </div>
+
+      <div class="col">
+        <label for="color">Color</label>
+        <select id="color">
+          <option value="">Any</option>
+          <option value="ic:color">Full color</option>
+          <option value="ic:gray">Black &amp; white</option>
+          <option value="ic:trans">Transparent</option>
+          <!-- specific color (example) uses "ic:specific,isc:red" but that can be brittle -->
+        </select>
+      </div>
+
+      <div class="col">
+        <label for="type">Image type</label>
+        <select id="type">
+          <option value="">Any</option>
+          <option value="itp:photo">Photo</option>
+          <option value="itp:clipart">Clip art</option>
+          <option value="itp:lineart">Line drawing</option>
+          <option value="itp:animated">Animated (GIF)</option>
+          <option value="itp:face">Face</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <label for="time">Time (recent)</label>
+        <select id="time">
+          <option value="">Any time</option>
+          <option value="qdr:d">Past 24 hours</option>
+          <option value="qdr:w">Past week</option>
+          <option value="qdr:m">Past month</option>
+          <option value="qdr:y">Past year</option>
+        </select>
+      </div>
+
+      <div class="col">
+        <label for="usage">Usage rights</label>
+        <select id="usage">
+          <option value="">Any</option>
+          <option value="sur:fmc">Creative Commons (labeled for reuse)</option>
+          <option value="sur:fc">Commercial &amp; other licenses</option>
+        </select>
+      </div>
+
+      <div class="col">
+        <label for="lang">Language (optional)</label>
+        <input id="lang" type="text" placeholder="e.g. en (optional)" />
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="openBtn">Open Google Images</button>
+      <button class="ghost" id="copyBtn">Copy URL</button>
+      <button class="ghost" id="previewBtn">Preview Link</button>
+    </div>
+
+    <div id="linkBox" class="url" aria-live="polite"></div>
+    <div class="note">Tip: This builder only constructs the Google Images URL (`tbm=isch` + `tbs` filters). Google decides which images to show based on many signals (alt text, page context, site authority, etc.).</div>
+    <footer>Made for you • Opens in a new tab</footer>
   </div>
 
   <script>
-    let model = null;
-    const queue = []; // hold classify jobs if user uploads before model is ready
+    const queryEl = document.getElementById('query');
+    const siteEl = document.getElementById('site');
+    const sizeEl = document.getElementById('size');
+    const colorEl = document.getElementById('color');
+    const typeEl = document.getElementById('type');
+    const timeEl = document.getElementById('time');
+    const usageEl = document.getElementById('usage');
+    const langEl = document.getElementById('lang');
+    const openBtn = document.getElementById('openBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const previewBtn = document.getElementById('previewBtn');
+    const linkBox = document.getElementById('linkBox');
 
-    // UI elements
-    const drop = document.getElementById('drop');
-    const fileInput = document.getElementById('fileInput');
-    const pickBtn = document.getElementById('pickBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const gallery = document.getElementById('gallery');
-    const loadingPill = document.getElementById('loadingPill');
-    const readyPill = document.getElementById('readyPill');
-    const errorPill = document.getElementById('errorPill');
+    function buildTbs() {
+      // Collect tbs fragments and join with commas; omit empty values.
+      const parts = [];
+      const size = sizeEl.value;
+      const color = colorEl.value;
+      const type = typeEl.value;
+      const time = timeEl.value;
+      const usage = usageEl.value;
 
-    // Initialize model
-    (async function init(){
-      try {
-        togglePill('loading');
-        // MobileNet v2, default alpha; good speed/accuracy tradeoff for browsers
-        model = await mobilenet.load({version: 2, alpha: 1.0});
-        togglePill('ready');
-        flushQueue();
-      } catch (err) {
-        console.error(err);
-        togglePill('error');
-      }
-    })();
+      if (type) parts.push(type);          // itp:photo, itp:clipart, etc
+      if (size) parts.push(size);          // isz:l, isz:m, isz:i
+      if (color) parts.push(color);        // ic:color, ic:gray, ic:trans
+      if (usage) parts.push(usage);        // sur:fmc, sur:fc
+      if (time) parts.push(time);          // qdr:d/w/m/y - common shorthand
 
-    function togglePill(state){
-      loadingPill.classList.toggle('hidden', state !== 'loading');
-      readyPill.classList.toggle('hidden', state !== 'ready');
-      errorPill.classList.toggle('hidden', state !== 'error');
+      // join non-empty with commas; return empty string if no filters
+      return parts.length ? parts.join(',') : '';
     }
 
-    // File picking
-    pickBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', e => handleFiles(e.target.files));
+    function buildUrl() {
+      const q = queryEl.value.trim();
+      if (!q) return '';
+      const site = siteEl.value.trim();
+      const safe = document.getElementById('safesearch').value;
+      const lang = langEl.value.trim();
 
-    // Drag & drop UX
-    ;['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {
-      e.preventDefault(); e.stopPropagation(); drop.classList.add('dragover');
-    }));
-    ;['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {
-      e.preventDefault(); e.stopPropagation(); drop.classList.remove('dragover');
-    }));
-    drop.addEventListener('drop', e => {
-      const dt = e.dataTransfer;
-      if (dt && dt.files) handleFiles(dt.files);
-    });
-    drop.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') fileInput.click();
+      // base
+      const params = new URLSearchParams();
+      params.set('q', q);
+      params.set('tbm', 'isch'); // image search
+
+      const tbs = buildTbs();
+      if (tbs) params.set('tbs', tbs);
+
+      if (site) {
+        // Use as_sitesearch for site restriction
+        params.set('as_sitesearch', site);
+      }
+      // Safe search parameter: 'safe' is observed (active/off)
+      if (safe) params.set('safe', safe);
+
+      // Optional language hint
+      if (lang) params.set('hl', lang);
+
+      return 'https://www.google.com/search?' + params.toString();
+    }
+
+    function updatePreview() {
+      const url = buildUrl();
+      linkBox.textContent = url || 'Enter a search query to generate the URL.';
+    }
+
+    openBtn.addEventListener('click', () => {
+      const url = buildUrl();
+      if (!url) { alert('Please enter a search query.'); return; }
+      window.open(url, '_blank');
     });
 
-    // Paste images from clipboard
-    document.addEventListener('paste', e => {
-      if (!e.clipboardData) return;
-      const files = [];
-      for (const item of e.clipboardData.items) {
-        if (item.kind === 'file') {
-          const f = item.getAsFile();
-          if (f) files.push(f);
+    copyBtn.addEventListener('click', async () => {
+      const url = buildUrl();
+      if (!url) { alert('Please enter a search query.'); return; }
+      try {
+        await navigator.clipboard.writeText(url);
+        linkBox.textContent = 'Copied to clipboard: ' + url;
+      } catch (e) {
+        // fallback
+        prompt('Copy this URL:', url);
+      }
+    });
+
+    previewBtn.addEventListener('click', () => {
+      updatePreview();
+      // also open a small window with the link text (useful if the browser blocks new tabs)
+      const url = buildUrl();
+      if (url) {
+        const w = window.open('', '_blank', 'width=700,height=300');
+        if (w) {
+          w.document.write('<p style="font-family:system-ui;padding:12px">Google Images URL:<br><a href="' + url + '" target="_blank">' + url + '</a></p>');
+          w.document.title = 'Preview link';
         }
       }
-      if (files.length) handleFiles(files);
     });
 
-    clearBtn.addEventListener('click', () => {
-      gallery.innerHTML = '';
-    });
-
-    function handleFiles(files){
-      const list = Array.from(files);
-      for (const file of list) {
-        if (!file.type.startsWith('image/')) {
-          const note = document.createElement('article');
-          note.className = 'card';
-          note.innerHTML = `<div class="body"><p class="name">${escapeHtml(file.name)}</p><p class="warn">Skipped: not an image file.</p></div>`;
-          gallery.prepend(note);
-          continue;
-        }
-        const url = URL.createObjectURL(file);
-        const card = document.createElement('article');
-        card.className = 'card';
-        card.innerHTML = `
-          <img class="thumb" alt="Preview of ${escapeHtml(file.name)}" />
-          <div class="body">
-            <p class="name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</p>
-            <div class="pred" id="p1"><span>—</span><span class="conf" id="c1"></span></div>
-            <div class="pred" id="p2"><span>—</span><span class="conf" id="c2"></span></div>
-            <div class="pred" id="p3"><span>—</span><span class="conf" id="c3"></span></div>
-          </div>`;
-        const img = card.querySelector('img');
-        gallery.prepend(card);
-        img.onload = () => {
-          URL.revokeObjectURL(url);
-          // Queue or classify immediately
-          const job = () => classify(img, card);
-          if (model) job(); else queue.push(job);
-        };
-        img.src = url;
-      }
-    }
-
-    function flushQueue(){
-      while (queue.length) {
-        const job = queue.shift();
-        try { job(); } catch (e) { console.error(e); }
-      }
-    }
-
-    async function classify(img, card){
-      try {
-        const preds = await model.classify(img, 3); // top‑3
-        renderPreds(card, preds);
-      } catch (err) {
-        console.error(err);
-        const body = card.querySelector('.body');
-        const warn = document.createElement('p');
-        warn.className = 'error';
-        warn.textContent = 'Classification failed.';
-        body.appendChild(warn);
-      }
-    }
-
-    function renderPreds(card, preds){
-      const p1 = card.querySelector('#p1');
-      const p2 = card.querySelector('#p2');
-      const p3 = card.querySelector('#p3');
-      const c1 = card.querySelector('#c1');
-      const c2 = card.querySelector('#c2');
-      const c3 = card.querySelector('#c3');
-      const items = [p1,p2,p3];
-      const confs = [c1,c2,c3];
-      items.forEach(el => el.classList.remove('best'));
-      preds.forEach((p,i)=>{
-        if (!items[i]) return;
-        items[i].firstElementChild.textContent = prettyLabel(p.className);
-        confs[i].textContent = toPct(p.probability);
-      });
-      if (items[0]) items[0].classList.add('best');
-    }
-
-    function toPct(x){
-      const pct = (x*100);
-      return (pct >= 99.95 ? '≈100.0%' : pct.toFixed(1)+'%');
-    }
-    function prettyLabel(s){
-      // MobileNet labels sometimes include commas; show first part for readability
-      if (!s) return 'Unknown';
-      return s.split(',')[0].trim();
-    }
-    function escapeHtml(str){
-      return String(str).replace(/[&<>'"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','\'':'&#39;','"':'&quot;'}[s]));
-    }
+    // update preview when controls change
+    [...document.querySelectorAll('input,select')].forEach(el => el.addEventListener('input', updatePreview));
+    // initial preview
+    updatePreview();
   </script>
 </body>
 </html>
