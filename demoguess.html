@@ -1,225 +1,50 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Google Images Link Builder</title>
+  <title>Car Brand Detector</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
   <style>
-    :root{--bg:#0f1720;--card:#0b1220;--accent:#0ea5a4;--muted:#94a3b8;color-scheme:dark}
-    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;min-height:100vh;background:linear-gradient(180deg,#071021 0%, #0b1320 100%);display:flex;align-items:center;justify-content:center;padding:24px;margin:0;color:#e6eef6}
-    .card{max-width:820px;width:100%;background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;box-shadow:0 6px 30px rgba(2,6,23,0.6)}
-    h1{margin:0 0 8px 0;font-size:20px}
-    .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
-    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-    input[type="text"],select{background:#071426;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;color:inherit;min-width:0}
-    .col{flex:1 1 200px;min-width:160px}
-    .actions{display:flex;gap:8px;margin-top:14px}
-    button{background:linear-gradient(90deg,var(--accent),#38bdf8);border:none;padding:10px 14px;border-radius:10px;color:#042026;font-weight:600;cursor:pointer}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-    .url{margin-top:14px;background:rgba(0,0,0,0.25);padding:10px;border-radius:8px;font-size:13px;word-break:break-all}
-    .note{font-size:12px;color:var(--muted);margin-top:8px}
-    footer{margin-top:12px;font-size:12px;color:var(--muted)}
+    body { font-family: Arial; background:#111; color:#eee; text-align:center; }
+    #preview { margin:20px; max-width:300px; border-radius:8px; }
+    input { margin: 20px; }
+    .result { font-size:20px; margin-top:20px; }
   </style>
 </head>
 <body>
-  <div class="card" role="main" aria-labelledby="title">
-    <h1 id="title">Google Images URL builder</h1>
-    <p class="note">Type a query, choose filters, then open Google Images or copy the generated link.</p>
+  <h1>Upload a Car Photo</h1>
+  <input type="file" accept="image/*" onchange="loadImage(event)" />
+  <br/>
+  <img id="preview" />
+  <div class="result" id="result">Prediction will appear here</div>
 
-    <div class="row">
-      <div class="col">
-        <label for="query">Search query</label>
-        <input id="query" type="text" placeholder="e.g. golden retriever puppy" value="golden retriever puppy" />
-      </div>
+<script>
+  let model, labels;
 
-      <div class="col">
-        <label for="site">Limit to site (optional)</label>
-        <input id="site" type="text" placeholder="example.com or leave blank" />
-      </div>
+  async function loadEverything() {
+    // Load model (from your hosted files)
+    model = await tf.loadLayersModel("model/model.json");
 
-      <div class="col">
-        <label for="safesearch">SafeSearch</label>
-        <select id="safesearch">
-          <option value="active">On (safe)</option>
-          <option value="off">Off</option>
-        </select>
-      </div>
-    </div>
+    // Load labels (from a JSON file with car class names)
+    const res = await fetch("model/labels.json");
+    labels = await res.json();
 
-    <div class="row">
-      <div class="col">
-        <label for="size">Image size</label>
-        <select id="size">
-          <option value="">Any</option>
-          <option value="isz:l">Large</option>
-          <option value="isz:m">Medium</option>
-          <option value="isz:i">Icon</option>
-        </select>
-      </div>
+    console.log("Model + labels ready!");
+  }
 
-      <div class="col">
-        <label for="color">Color</label>
-        <select id="color">
-          <option value="">Any</option>
-          <option value="ic:color">Full color</option>
-          <option value="ic:gray">Black &amp; white</option>
-          <option value="ic:trans">Transparent</option>
-          <!-- specific color (example) uses "ic:specific,isc:red" but that can be brittle -->
-        </select>
-      </div>
+  async function predict(img) {
+    let tensor = tf.browser.fromPixels(img)
+      .resizeNearestNeighbor([224,224]) // depends on model input size
+      .toFloat()
+      .expandDims();
 
-      <div class="col">
-        <label for="type">Image type</label>
-        <select id="type">
-          <option value="">Any</option>
-          <option value="itp:photo">Photo</option>
-          <option value="itp:clipart">Clip art</option>
-          <option value="itp:lineart">Line drawing</option>
-          <option value="itp:animated">Animated (GIF)</option>
-          <option value="itp:face">Face</option>
-        </select>
-      </div>
-    </div>
+    const predictions = await model.predict(tensor).data();
+    let maxIndex = predictions.indexOf(Math.max(...predictions));
+    document.getElementById("result").innerText =
+      "Prediction: " + labels[maxIndex];
+  }
 
-    <div class="row">
-      <div class="col">
-        <label for="time">Time (recent)</label>
-        <select id="time">
-          <option value="">Any time</option>
-          <option value="qdr:d">Past 24 hours</option>
-          <option value="qdr:w">Past week</option>
-          <option value="qdr:m">Past month</option>
-          <option value="qdr:y">Past year</option>
-        </select>
-      </div>
-
-      <div class="col">
-        <label for="usage">Usage rights</label>
-        <select id="usage">
-          <option value="">Any</option>
-          <option value="sur:fmc">Creative Commons (labeled for reuse)</option>
-          <option value="sur:fc">Commercial &amp; other licenses</option>
-        </select>
-      </div>
-
-      <div class="col">
-        <label for="lang">Language (optional)</label>
-        <input id="lang" type="text" placeholder="e.g. en (optional)" />
-      </div>
-    </div>
-
-    <div class="actions">
-      <button id="openBtn">Open Google Images</button>
-      <button class="ghost" id="copyBtn">Copy URL</button>
-      <button class="ghost" id="previewBtn">Preview Link</button>
-    </div>
-
-    <div id="linkBox" class="url" aria-live="polite"></div>
-    <div class="note">Tip: This builder only constructs the Google Images URL (`tbm=isch` + `tbs` filters). Google decides which images to show based on many signals (alt text, page context, site authority, etc.).</div>
-    <footer>Made for you • Opens in a new tab</footer>
-  </div>
-
-  <script>
-    const queryEl = document.getElementById('query');
-    const siteEl = document.getElementById('site');
-    const sizeEl = document.getElementById('size');
-    const colorEl = document.getElementById('color');
-    const typeEl = document.getElementById('type');
-    const timeEl = document.getElementById('time');
-    const usageEl = document.getElementById('usage');
-    const langEl = document.getElementById('lang');
-    const openBtn = document.getElementById('openBtn');
-    const copyBtn = document.getElementById('copyBtn');
-    const previewBtn = document.getElementById('previewBtn');
-    const linkBox = document.getElementById('linkBox');
-
-    function buildTbs() {
-      // Collect tbs fragments and join with commas; omit empty values.
-      const parts = [];
-      const size = sizeEl.value;
-      const color = colorEl.value;
-      const type = typeEl.value;
-      const time = timeEl.value;
-      const usage = usageEl.value;
-
-      if (type) parts.push(type);          // itp:photo, itp:clipart, etc
-      if (size) parts.push(size);          // isz:l, isz:m, isz:i
-      if (color) parts.push(color);        // ic:color, ic:gray, ic:trans
-      if (usage) parts.push(usage);        // sur:fmc, sur:fc
-      if (time) parts.push(time);          // qdr:d/w/m/y - common shorthand
-
-      // join non-empty with commas; return empty string if no filters
-      return parts.length ? parts.join(',') : '';
-    }
-
-    function buildUrl() {
-      const q = queryEl.value.trim();
-      if (!q) return '';
-      const site = siteEl.value.trim();
-      const safe = document.getElementById('safesearch').value;
-      const lang = langEl.value.trim();
-
-      // base
-      const params = new URLSearchParams();
-      params.set('q', q);
-      params.set('tbm', 'isch'); // image search
-
-      const tbs = buildTbs();
-      if (tbs) params.set('tbs', tbs);
-
-      if (site) {
-        // Use as_sitesearch for site restriction
-        params.set('as_sitesearch', site);
-      }
-      // Safe search parameter: 'safe' is observed (active/off)
-      if (safe) params.set('safe', safe);
-
-      // Optional language hint
-      if (lang) params.set('hl', lang);
-
-      return 'https://www.google.com/search?' + params.toString();
-    }
-
-    function updatePreview() {
-      const url = buildUrl();
-      linkBox.textContent = url || 'Enter a search query to generate the URL.';
-    }
-
-    openBtn.addEventListener('click', () => {
-      const url = buildUrl();
-      if (!url) { alert('Please enter a search query.'); return; }
-      window.open(url, '_blank');
-    });
-
-    copyBtn.addEventListener('click', async () => {
-      const url = buildUrl();
-      if (!url) { alert('Please enter a search query.'); return; }
-      try {
-        await navigator.clipboard.writeText(url);
-        linkBox.textContent = 'Copied to clipboard: ' + url;
-      } catch (e) {
-        // fallback
-        prompt('Copy this URL:', url);
-      }
-    });
-
-    previewBtn.addEventListener('click', () => {
-      updatePreview();
-      // also open a small window with the link text (useful if the browser blocks new tabs)
-      const url = buildUrl();
-      if (url) {
-        const w = window.open('', '_blank', 'width=700,height=300');
-        if (w) {
-          w.document.write('<p style="font-family:system-ui;padding:12px">Google Images URL:<br><a href="' + url + '" target="_blank">' + url + '</a></p>');
-          w.document.title = 'Preview link';
-        }
-      }
-    });
-
-    // update preview when controls change
-    [...document.querySelectorAll('input,select')].forEach(el => el.addEventListener('input', updatePreview));
-    // initial preview
-    updatePreview();
-  </script>
+  loadEverything();
+</script>
 </body>
 </html>
