@@ -1,50 +1,69 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Car Brand Detector</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-  <style>
-    body { font-family: Arial; background:#111; color:#eee; text-align:center; }
-    #preview { margin:20px; max-width:300px; border-radius:8px; }
-    input { margin: 20px; }
-    .result { font-size:20px; margin-top:20px; }
-  </style>
+<meta charset="UTF-8">
+<title>Car Brand & Model Detector</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+<style>
+  body { font-family: Arial; background:#111; color:#eee; text-align:center; margin:0; padding:20px; }
+  h1 { margin-bottom:20px; }
+  input { margin:20px; }
+  #preview { max-width:300px; margin:20px auto; border-radius:8px; display:block; }
+  #results { font-size:18px; margin-top:20px; }
+</style>
 </head>
 <body>
-  <h1>Upload a Car Photo</h1>
-  <input type="file" accept="image/*" onchange="loadImage(event)" />
-  <br/>
-  <img id="preview" />
-  <div class="result" id="result">Prediction will appear here</div>
+
+<h1>Car Brand & Model Detector</h1>
+<input type="file" accept="image/*" onchange="loadImage(event)">
+<img id="preview">
+<div id="results">Prediction will appear here</div>
 
 <script>
-  let model, labels;
+let model, labels;
 
-  async function loadEverything() {
-    // Load model (from your hosted files)
-    model = await tf.loadLayersModel("model/model.json");
+// Load model and labels
+async function loadEverything() {
+  document.getElementById("results").innerText = "Loading model...";
+  model = await tf.loadLayersModel("web_model/model.json");
+  const res = await fetch("labels.json");
+  labels = await res.json();
+  document.getElementById("results").innerText = "Model loaded. Upload a car image!";
+}
+loadEverything();
 
-    // Load labels (from a JSON file with car class names)
-    const res = await fetch("model/labels.json");
-    labels = await res.json();
+// Handle image upload
+function loadImage(event) {
+  const img = document.getElementById("preview");
+  img.src = URL.createObjectURL(event.target.files[0]);
+  img.onload = () => predict(img);
+}
 
-    console.log("Model + labels ready!");
-  }
+// Predict car class
+async function predict(img) {
+  if (!model) return alert("Model not loaded yet!");
 
-  async function predict(img) {
-    let tensor = tf.browser.fromPixels(img)
-      .resizeNearestNeighbor([224,224]) // depends on model input size
-      .toFloat()
-      .expandDims();
+  let tensor = tf.browser.fromPixels(img)
+    .resizeBilinear([224,224])
+    .toFloat()
+    .div(tf.scalar(255.0))
+    .expandDims();
 
-    const predictions = await model.predict(tensor).data();
-    let maxIndex = predictions.indexOf(Math.max(...predictions));
-    document.getElementById("result").innerText =
-      "Prediction: " + labels[maxIndex];
-  }
+  const predictions = await model.predict(tensor).data();
+  // Get top-3 predictions
+  const topIndices = Array.from(predictions)
+                          .map((p,i) => [p,i])
+                          .sort((a,b) => b[0]-a[0])
+                          .slice(0,3);
 
-  loadEverything();
+  let resultText = "Top Predictions:\n";
+  topIndices.forEach(([prob, idx]) => {
+    resultText += `${labels[idx]}: ${(prob*100).toFixed(2)}%\n`;
+  });
+
+  document.getElementById("results").innerText = resultText;
+}
 </script>
+
 </body>
 </html>
